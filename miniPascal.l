@@ -92,27 +92,27 @@ numbers [0-9]
 
 
 := printf("Line %d contains assigment\n", number_of_line); fprintf(f, "%s", yytext);// operators
-\<= printf("Line %d contains 'less than or equal' operator\n", number_of_line);
-\>= printf("Line %d contains 'grater than or equal' operator\n", number_of_line);
-\<\> printf("Line %d contains 'not equal' operator\n", number_of_line);
-\.\. printf("Line %d contains 'range' (..) operator\n", number_of_line);
-"=" printf("Line %d contains 'equal' operator\n", number_of_line);
-">" printf("Line %d contains 'greater than' operator\n", number_of_line);
-"<" printf("Line %d contains 'less than' operator\n", number_of_line);
-"." printf("Line %d contains 'dot' operator, therefore should be the last in the file\n", number_of_line);
-"," printf("Line %d contains 'coma' operator\n", number_of_line);
-"+" printf("Line %d contains 'addition' operator\n", number_of_line);
-"-" printf("Line %d contains 'subtraction' operator\n", number_of_line);
-"*" printf("Line %d contains 'multiplication' operator\n", number_of_line);
-"/" printf("Line %d contains 'division' operator\n", number_of_line);
-":" printf("Line %d contains 'colon' operator\n", number_of_line);
-";" printf("Line %d contains 'semicolon' operator\n", number_of_line);
+\<= printf("Line %d contains 'less than or equal' operator\n", number_of_line); fprintf(f, "%s", yytext);
+\>= printf("Line %d contains 'grater than or equal' operator\n", number_of_line); fprintf(f, "%s", yytext);
+\<\> printf("Line %d contains 'not equal' operator\n", number_of_line); fprintf(f, "%s", yytext);
+\.\. printf("Line %d contains 'range' (..) operator\n", number_of_line); fprintf(f, "%s", yytext);
+"=" printf("Line %d contains 'equal' operator\n", number_of_line); fprintf(f, "%s", yytext);
+">" printf("Line %d contains 'greater than' operator\n", number_of_line); fprintf(f, "%s", yytext);
+"<" printf("Line %d contains 'less than' operator\n", number_of_line); fprintf(f, "%s", yytext);
+"." printf("Line %d contains 'dot' operator, therefore should be the last in the file\n", number_of_line); fprintf(f, "%s", yytext);
+"," printf("Line %d contains 'coma' operator\n", number_of_line); fprintf(f, "%s", yytext);
+"+" printf("Line %d contains 'addition' operator\n", number_of_line); fprintf(f, "%s", yytext);
+"-" printf("Line %d contains 'subtraction' operator\n", number_of_line); fprintf(f, "%s", yytext);
+"*" printf("Line %d contains 'multiplication' operator\n", number_of_line); fprintf(f, "%s", yytext);
+"/" printf("Line %d contains 'division' operator\n", number_of_line); fprintf(f, "%s", yytext);
+":" printf("Line %d contains 'colon' operator\n", number_of_line); fprintf(f, "%s", yytext);
+";" printf("Line %d contains 'semicolon' operator\n", number_of_line); fprintf(f, "%s", yytext);
 
 
-"(" printf("Line %d contains opening parenthesis\n", number_of_line); // brackets
-")" printf("Line %d contains closing parenthesis\n", number_of_line);
-"[" printf("Line %d contains opening bracket\n", number_of_line);
-"]" printf("Line %d contains closing bracket\n", number_of_line);
+"(" printf("Line %d contains opening parenthesis\n", number_of_line); fprintf(f, "%s", yytext); // brackets
+")" printf("Line %d contains closing parenthesis\n", number_of_line); fprintf(f, "%s", yytext);
+"[" printf("Line %d contains opening bracket\n", number_of_line); fprintf(f, "%s", yytext);
+"]" printf("Line %d contains closing bracket\n", number_of_line); fprintf(f, "%s", yytext);
 
 [" "]/[^" "] {
     fprintf(f, " ");
@@ -122,8 +122,6 @@ numbers [0-9]
         fprintf(f, "\t");
     }
 }
-
-
 
 %%
 
