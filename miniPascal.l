@@ -2,6 +2,7 @@
 
 %{
 #include <stdio.h>
+#include <string.h>
     typedef enum{PROGRAM, VAR, ARRAY, OF, FUNCTION, BEG,
                   END, WHILE, DO, IF, THEN, ELSE, DIV_WORD, AND, PROCEDURE,
                   COMMENT,
@@ -9,6 +10,8 @@
                   COLON, SEMICOLON, COMA, DOT, RANGE, PLUS, MINUS,
                   MULTI, DIV_SIGN, NEQ, EQ, LT, GT, LEQ, GEQ, ASSIGN,
                   ID, NUM} TokenType;
+char keywords[15][10] = {"program", "var", "array", "of", "function", "begin", "end",
+            "while", "do", "if", "then", "else", "div", "and", "procedure"};
     typedef struct {
         TokenType token_val;
         union{
@@ -18,6 +21,10 @@
         } attribute;
     } TokenRecord;
     int number_of_line = 1;
+    int keyword_collection_size = 15;
+    FILE *f;
+    int depth = 0;
+
 %}
 
 whitespace  [ \t]
@@ -27,33 +34,64 @@ numbers [0-9]
 
 %%
 
-"{"[^"}"]*"}" printf("This line %d is a comment\n", number_of_line); // comments
+"{"[^"}"]*"}" {
+    printf("This line %d is a comment\n", number_of_line);
+    // comments
+    fprintf(f, "(*");
+    int cid = 0;
+    while(yytext[cid]){
+        cid++;
+    }
+    for(int i = 1; i < cid -1; i++){
+        fprintf(f, "%c", yytext[i]);
+    }
+    fprintf(f, "*)");
+}
 
-["\n"]+ number_of_line ++; // counting lines
+["\n"]+ {
+    number_of_line ++; // counting lines
+    fprintf(f, "\n");
+}
 
-"-"?{numbers}+("."{numbers}+)?(E("-")?{numbers}+)? printf("Line %d contains a number: %s\n", number_of_line, yytext); // numbers
+"-"?{numbers}+("."{numbers}+)?(E("-")?{numbers}+)? {
+    printf("Line %d contains a number: %s\n", number_of_line, yytext);
+    fprintf(f, "%s", yytext);// numbers
+}
 
-"program" printf("Line %d contains keyword 'program'\n", number_of_line); // keywords
-"var" printf("Line %d contains keyword 'var'\n", number_of_line);
-"array" printf("Line %d contains keyword 'array'\n", number_of_line);
-"of" printf("Line %d contains keyword 'of'\n", number_of_line);
-"if" printf("Line %d contains keyword 'if'\n", number_of_line);
-"else" printf("Line %d contains keyword 'else'\n", number_of_line);
-"then" printf("Line %d contains keyword 'then'\n", number_of_line);
-"function" printf("Line %d contains keyword 'function'\n", number_of_line);
-"procedure" printf("Line %d contains keyword 'procedure'\n", number_of_line);
-"begin" printf("Line %d contains keyword 'begin'\n", number_of_line);
-"end" printf("Line %d contains keyword 'end'\n", number_of_line);
-"while" printf("Line %d contains keyword 'while'\n", number_of_line);
-"do" printf("Line %d contains keyword 'do'\n", number_of_line);
-"and" printf("Line %d contains keyword 'and'\n", number_of_line);
-"div" printf("Line %d contains keyword 'div'\n", number_of_line);
+[A-Za-z_][A-Za-z0-9_]* {
+    int found = 0;
+    for(int i = 0; i < keyword_collection_size; i++){
+        if(strcmp(keywords[i], yytext) == 0){
+            printf("Line %d contains a keyword: %s\n", number_of_line, yytext);
+            if(strcmp(yytext, "begin") == 0){
+                depth ++;
+            }
+            if (strcmp(yytext, "end")== 0){
+                depth --;
+            }
+            found = 1;
+            int cid = 0;
+            while(yytext[cid]){
+                fprintf(f, "%c", toupper(yytext[cid]));
+                cid ++;
+            }
+            break;
+        }
+    }
+    if (found == 0){
+        printf("Line %d contains identifier: %s\n", number_of_line, yytext);
+        int cid = 0;
+        while(yytext[cid]){
+            fprintf(f, "%c", tolower(yytext[cid]));
+            cid ++;
+        }
+    }
+}
 
-[A-Za-z_][A-Za-z0-9_]* printf("Line %d contains identifier: %s\n", number_of_line, yytext); // ids
 [0-9]+[A-Za-z_][A-Za-z0-9_]* printf("\tError: Line %d: identifier cannot start with number (got %s)\n", number_of_line, yytext);
 
 
-:= printf("Line %d contains assigment\n", number_of_line); // operators
+:= printf("Line %d contains assigment\n", number_of_line); fprintf(f, "%s", yytext);// operators
 \<= printf("Line %d contains 'less than or equal' operator\n", number_of_line);
 \>= printf("Line %d contains 'grater than or equal' operator\n", number_of_line);
 \<\> printf("Line %d contains 'not equal' operator\n", number_of_line);
@@ -76,13 +114,23 @@ numbers [0-9]
 "[" printf("Line %d contains opening bracket\n", number_of_line);
 "]" printf("Line %d contains closing bracket\n", number_of_line);
 
-{whitespace}+ //pass
-[^{A-Za-z0-9<>.()[]{},/+=:;*-_ \t\r\n}]+ printf("\tError: Line %d: unrecognised character(s): %s", number_of_line, yytext);
+[" "]/[^" "] {
+    fprintf(f, " ");
+}
+[" ""\t"]+ {
+    for(int i = 0; i < depth; i++){
+        fprintf(f, "\t");
+    }
+}
+
+
 
 %%
 
 int main(int argc, char **argv) {
-    yylex();
 
+    f = fopen("corrected_file.pas", "w");
+    yylex();
+    fclose(f);
     return 0;
 }
