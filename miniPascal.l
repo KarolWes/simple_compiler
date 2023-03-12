@@ -3,15 +3,22 @@
 %{
 #include <stdio.h>
 #include <string.h>
-    typedef enum{PROGRAM, VAR, ARRAY, OF, FUNCTION, BEG,
-                  END, WHILE, DO, IF, THEN, ELSE, DIV_WORD, AND, PROCEDURE,
+    typedef enum{AND, ARRAY, BEG, CASE, CONST, DIV, DO, DOWNTO, ELSE, END, FIL, FOR,
+                 FUNCTION, GOTO, IF, IN, LABEL, MOD, NIL, NOT, OF, OR, PACKED, PROCEDURE,
+                 PROGRAM, RECORD, REPEAT, SET, THEN, TO, TYPE, UNTIL, VAR, WHILE, WITH,
                   COMMENT,
                   BRAC_OPEN, BRAC_CLOSE, PARENTH_OPEN, PARENTH_CLOSE,
                   COLON, SEMICOLON, COMA, DOT, RANGE, PLUS, MINUS,
                   MULTI, DIV_SIGN, NEQ, EQ, LT, GT, LEQ, GEQ, ASSIGN,
                   ID, NUM} TokenType;
-char keywords[15][10] = {"program", "var", "array", "of", "function", "begin", "end",
-            "while", "do", "if", "then", "else", "div", "and", "procedure"};
+    const char* keywords[] = {
+        "and", "array", "begin", "case", "const", "div",
+        "do", "downto", "else", "end", "file", "for",
+        "function", "goto", "if", "in", "label", "mod",
+        "nil", "not", "of", "or", "packed", "procedure",
+        "program", "record", "repeat", "set", "then",
+        "to", "type", "until", "var", "while", "with"
+    };
     typedef struct {
         TokenType token_val;
         union{
@@ -21,7 +28,7 @@ char keywords[15][10] = {"program", "var", "array", "of", "function", "begin", "
         } attribute;
     } TokenRecord;
     int number_of_line = 1;
-    int keyword_collection_size = 15;
+    int keyword_collection_size = 35;
     FILE *f;
     int depth = 0;
 
@@ -60,7 +67,14 @@ numbers [0-9]
 
 [A-Za-z_][A-Za-z0-9_]* {
     int found = 0;
+    int cid = 0;
+    while(yytext[cid]){
+        yytext[cid] = tolower(yytext[cid]);
+        cid ++;
+    }
+    printf("\tlowercased\n");
     for(int i = 0; i < keyword_collection_size; i++){
+
         if(strcmp(keywords[i], yytext) == 0){
             printf("Line %d contains a keyword: %s\n", number_of_line, yytext);
             if(strcmp(yytext, "begin") == 0){
@@ -75,16 +89,13 @@ numbers [0-9]
                 fprintf(f, "%c", toupper(yytext[cid]));
                 cid ++;
             }
+            printf("\tuppercased\n");
             break;
         }
     }
     if (found == 0){
         printf("Line %d contains identifier: %s\n", number_of_line, yytext);
-        int cid = 0;
-        while(yytext[cid]){
-            fprintf(f, "%c", tolower(yytext[cid]));
-            cid ++;
-        }
+        fprintf(f, "%s", yytext);
     }
 }
 
