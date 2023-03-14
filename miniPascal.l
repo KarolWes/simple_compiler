@@ -134,6 +134,8 @@ numbers [0-9]
     }
 }
 
+. printf("\tUnrecognised character %s\n", yytext);
+
 %%
 
 int main(int argc, char **argv) {
