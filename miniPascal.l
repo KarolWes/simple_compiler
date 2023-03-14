@@ -134,7 +134,7 @@ numbers [0-9]
     }
 }
 
-. printf("\tUnrecognised character %s\n", yytext);
+. printf("\tError: Unrecognised character %s\n", yytext);
 
 %%
 
