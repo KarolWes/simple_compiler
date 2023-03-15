@@ -30,18 +30,19 @@
     int number_of_line = 1;
     int keyword_collection_size = 35;
     FILE *f;
-    int depth = 0;
 
 %}
-
+comment "{"[^"}"]*"}"
 whitespace  [ \t]
-available_after_number [ \n\t\r.+-*/();]
-available_characters [A-Za-z0-9<>.()[]{},/+=:;*-_ \t\r\n]
-numbers [0-9]
+digit [0-9]
+number "-"?{digit}+("."{digit}+)?(E("-")?{digit}+)?
+alpha [A-Za-z_]
+alpha_digit {alpha}|{digit}
+operators ".."|":="|"<>"|"<="|">="|"["|"]"|"-"|[(),.;:=+*/<>]
 
 %%
 
-"{"[^"}"]*"}" {
+{comment} {
     printf("This line %d is a comment\n", number_of_line);
     // comments
     fprintf(f, "(*");
@@ -59,37 +60,28 @@ numbers [0-9]
     number_of_line ++; // counting lines
     fprintf(f, "\n");
 }
-
-"-"?{numbers}+("."{numbers}+)?(E("-")?{numbers}+)? {
+{number} {
     printf("Line %d contains a number: %s\n", number_of_line, yytext);
     fprintf(f, "%s", yytext);// numbers
 }
 
-[A-Za-z_][A-Za-z0-9_]* {
+{alpha}{alpha_digit}* {
     int found = 0;
     int cid = 0;
     while(yytext[cid]){
         yytext[cid] = tolower(yytext[cid]);
         cid ++;
     }
-    printf("\tlowercased\n");
     for(int i = 0; i < keyword_collection_size; i++){
 
         if(strcmp(keywords[i], yytext) == 0){
             printf("Line %d contains a keyword: %s\n", number_of_line, yytext);
-            if(strcmp(yytext, "begin") == 0){
-                depth ++;
-            }
-            if (strcmp(yytext, "end")== 0){
-                depth --;
-            }
             found = 1;
             int cid = 0;
             while(yytext[cid]){
                 fprintf(f, "%c", toupper(yytext[cid]));
                 cid ++;
             }
-            printf("\tuppercased\n");
             break;
         }
     }
@@ -99,39 +91,13 @@ numbers [0-9]
     }
 }
 
-[0-9]+[A-Za-z_][A-Za-z0-9_]* printf("\tError: Line %d: identifier cannot start with number (got %s)\n", number_of_line, yytext);
-
-
-:= printf("Line %d contains assigment\n", number_of_line); fprintf(f, "%s", yytext);// operators
-\<= printf("Line %d contains 'less than or equal' operator\n", number_of_line); fprintf(f, "%s", yytext);
-\>= printf("Line %d contains 'grater than or equal' operator\n", number_of_line); fprintf(f, "%s", yytext);
-\<\> printf("Line %d contains 'not equal' operator\n", number_of_line); fprintf(f, "%s", yytext);
-\.\. printf("Line %d contains 'range' (..) operator\n", number_of_line); fprintf(f, "%s", yytext);
-"=" printf("Line %d contains 'equal' operator\n", number_of_line); fprintf(f, "%s", yytext);
-">" printf("Line %d contains 'greater than' operator\n", number_of_line); fprintf(f, "%s", yytext);
-"<" printf("Line %d contains 'less than' operator\n", number_of_line); fprintf(f, "%s", yytext);
-"." printf("Line %d contains 'dot' operator, therefore should be the last in the file\n", number_of_line); fprintf(f, "%s", yytext);
-"," printf("Line %d contains 'coma' operator\n", number_of_line); fprintf(f, "%s", yytext);
-"+" printf("Line %d contains 'addition' operator\n", number_of_line); fprintf(f, "%s", yytext);
-"-" printf("Line %d contains 'subtraction' operator\n", number_of_line); fprintf(f, "%s", yytext);
-"*" printf("Line %d contains 'multiplication' operator\n", number_of_line); fprintf(f, "%s", yytext);
-"/" printf("Line %d contains 'division' operator\n", number_of_line); fprintf(f, "%s", yytext);
-":" printf("Line %d contains 'colon' operator\n", number_of_line); fprintf(f, "%s", yytext);
-";" printf("Line %d contains 'semicolon' operator\n", number_of_line); fprintf(f, "%s", yytext);
-
-
-"(" printf("Line %d contains opening parenthesis\n", number_of_line); fprintf(f, "%s", yytext); // brackets
-")" printf("Line %d contains closing parenthesis\n", number_of_line); fprintf(f, "%s", yytext);
-"[" printf("Line %d contains opening bracket\n", number_of_line); fprintf(f, "%s", yytext);
-"]" printf("Line %d contains closing bracket\n", number_of_line); fprintf(f, "%s", yytext);
-
-[" "]/[^" "] {
-    fprintf(f, " ");
+{operators} {
+    printf("Line %d contains an operator %s\n", number_of_line, yytext);
+    fprintf(f, "%s", yytext);
 }
-[" ""\t"]+ {
-    for(int i = 0; i < depth; i++){
-        fprintf(f, "\t");
-    }
+
+{whitespace}+ {
+    fprintf(f, " ");
 }
 
 . printf("\tError: Unrecognised character %s\n", yytext);
