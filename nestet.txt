@@ -1,0 +1,2 @@
+(* this is (* a Modula-2 *) comment *)
+(* (* (* (* test *) hey *) bye *) tchuess*)

@@ -30,6 +30,9 @@
     int number_of_line = 1;
     int keyword_collection_size = 35;
     FILE *f;
+    int comment_count = 0;
+    int max_nest = 0;
+    int current_nest = 0;
 
 %}
 comment "{"[^"}"]*"}"
@@ -40,7 +43,41 @@ alpha [A-Za-z_]
 alpha_digit {alpha}|{digit}
 operators ".."|":="|"<>"|"<="|">="|"["|"]"|"-"|[(),.;:=+*/<>]
 
+%x NEST
+
 %%
+
+"(*" {
+    BEGIN NEST;
+    comment_count++;
+    current_nest++;
+}
+
+<NEST>"(*" {
+    current_nest ++;
+}
+<NEST>"*)" {
+    if(current_nest > max_nest){
+        max_nest = current_nest;
+    }
+    current_nest--;
+    if(current_nest == 0){
+        BEGIN 0;
+    }
+}
+<NEST>"\n" {
+    comment_count--;
+    printf("\tError: invalid comment\n");
+    BEGIN 0;
+}
+<NEST>.
+<NEST><<EOF>> {
+    if (current_nest > 0){
+        comment_count--;
+        printf("\tError: invalid comment\n");
+        BEGIN 0;
+    }
+}
 
 {comment} {
     printf("This line %d is a comment\n", number_of_line);
@@ -109,5 +146,7 @@ int main(int argc, char **argv) {
     f = fopen("corrected_file.pas", "w");
     yylex();
     fclose(f);
+    printf("Number of comments: %d\n", comment_count);
+    printf("Maximal nest: %d\n", max_nest);
     return 0;
 }
