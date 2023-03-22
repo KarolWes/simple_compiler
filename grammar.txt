@@ -1,0 +1,29 @@
+Mini-pascal context-free grammar
+(tested using https://web.stanford.edu/class/archive/cs/cs103/cs103.1156/tools/cfg/)
+
+Digit -> 0|1|2|3|4|5|6|7|8|9
+Number -> Digit | Digit Number
+Addition -> +|-
+Multi -> *|/|div
+Comp -> <>|<|>|<=|>=|= 
+Other -> 
+Variable -> ... (any set of characters, that is not a keyword)
+Type -> integer|real
+
+list_of_vars -> Variable | Variable list_of_vars
+var_type -> list_of_vars: Type; | list_of_vars: array_def;
+list_of_var_types -> var_type|var_type '\n' list_of_var_types
+num_var = Number | Variable
+
+expression -> expression Addition term | term
+term -> term Multi br_num | br_num
+br_num -> (expression) | num_var
+
+if_st -> if(B) then Other else_st
+else_st -> else Other | ɛ
+
+comparison -> expression Comp expression
+assignment -> Variable := expression
+prog_def -> program Variable;
+var_def -> var list_of_var_types
+array_def -> array [num_var..num_var] of Type

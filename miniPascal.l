@@ -65,11 +65,7 @@ operators ".."|":="|"<>"|"<="|">="|"["|"]"|"-"|[(),.;:=+*/<>]
         BEGIN 0;
     }
 }
-<NEST>"\n" {
-    comment_count--;
-    printf("\tError: invalid comment\n");
-    BEGIN 0;
-}
+
 <NEST>.
 <NEST><<EOF>> {
     if (current_nest > 0){
@@ -149,4 +145,9 @@ int main(int argc, char **argv) {
     printf("Number of comments: %d\n", comment_count);
     printf("Maximal nest: %d\n", max_nest);
     return 0;
+//    <NEST>"\n" {
+//        comment_count--;
+//        printf("\tError: invalid comment\n");
+//        BEGIN 0;
+//    }
 }
