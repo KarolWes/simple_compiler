@@ -1,7 +1,7 @@
 { This program implements some famous algorithms }
 
 
-
+?
 program minipas;
 
   var a: integer;
@@ -118,7 +118,4 @@ begin
   end;
   bubble_sort(x, b)
 end.
--3.657E-14
-19abc_a9
-k2
 ???

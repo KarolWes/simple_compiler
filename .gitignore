@@ -2,5 +2,7 @@
 /cmake-build-debug/
 /.idea/
 *.out
+*.o
 *.yy.c
 *.zip
+*.pdf

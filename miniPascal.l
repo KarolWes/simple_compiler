@@ -3,9 +3,10 @@
 %{
 #include <stdio.h>
 #include <string.h>
-    typedef enum{AND, ARRAY, BEG, CASE, CONST, DIV, DO, DOWNTO, ELSE, END, FIL, FOR,
+    typedef enum{AND=1, ARRAY, BEG, CASE, CONST, DIV, DO, DOWNTO, ELSE, END, FIL, FOR,
                  FUNCTION, GOTO, IF, IN, LABEL, MOD, NIL, NOT, OF, OR, PACKED, PROCEDURE,
                  PROGRAM, RECORD, REPEAT, SET, THEN, TO, TYPE, UNTIL, VAR, WHILE, WITH,
+				 INTEGER, REAL
                   COMMENT,
                   BRAC_OPEN, BRAC_CLOSE, PARENTH_OPEN, PARENTH_CLOSE,
                   COLON, SEMICOLON, COMA, DOT, RANGE, PLUS, MINUS,
@@ -17,7 +18,8 @@
         "function", "goto", "if", "in", "label", "mod",
         "nil", "not", "of", "or", "packed", "procedure",
         "program", "record", "repeat", "set", "then",
-        "to", "type", "until", "var", "while", "with"
+        "to", "type", "until", "var", "while", "with",
+		"integer", "real"
     };
     typedef struct {
         TokenType token_val;
@@ -28,7 +30,7 @@
         } attribute;
     } TokenRecord;
     int number_of_line = 1;
-    int keyword_collection_size = 35;
+    int keyword_collection_size = 37;
     FILE *f;
     int comment_count = 0;
     int max_nest = 0;
@@ -139,7 +141,7 @@ operators ".."|":="|"<>"|"<="|">="|"["|"]"|"-"|[(),.;:=+*/<>]
 
 int main(int argc, char **argv) {
 
-    f = fopen("corrected_file.pas", "w");
+    f = fopen("data/corrected_file.pas", "w");
     yylex();
     fclose(f);
     printf("Number of comments: %d\n", comment_count);
