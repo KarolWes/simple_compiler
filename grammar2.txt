@@ -1,0 +1,34 @@
+start → PROGRAM IDENT ; varDec subProgList compStmt .
+varDec → VAR varDecList | ε
+varDecList → varDecList ident ; | ident ;
+ident → IDENT identExt
+identExt → , ident | parenth | index | : type| := expr | ε
+type → simpleType | ARRAY [ NUM .. NUM ] OF simpleType
+simpleType → INTEGER | REAL | BOOLEAN
+subProgList → subProgHead varDec compStmt ; subProgList | ε
+subProgHead → FUNCTION IDENT parenth : type ; | PROCEDURE IDENT parenth ;
+parenth → ( interior )
+interior → parList | exprList
+parList → ident parListExt
+parListExt → ; parList | ε
+compStmt → BEGIN stmtList END
+stmtList → statement stmtList
+stmtListExt → ; stmtList |ε
+statement → ident | compStmt | ifStmt | whileStmt
+index → [ expr range ]
+range → .. expr | ε
+ifStmt → IF expr THEN statement elsePart
+elsePart → ELSE statement| ε
+whileStmt → WHILE expr DO statement
+exprList → expr exprListExt
+exprListExt → , exprList | ε
+expr → simpleExpr exprOp
+exprOp → relOp simpleExpr | ε 
+simpleExpr → term  simpleExprOp
+simpleExprOp → addOp simpleExpr| ε 
+term → factor termOp
+termOp → mulOp term| ε
+factor → NUM| FALSE| TRUE| ident| NOT factor| – factor
+relOp → < | <= | > | >= | = | <>
+addOp → + | – | OR
+mulOp → * | / | DIV | MOD | AND
