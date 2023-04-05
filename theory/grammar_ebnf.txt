@@ -21,7 +21,7 @@ exprList → expr {, expr}
 expr → simpleExpr {relOp simpleExpr}
 simpleExpr → term {addOp term}
 term → factor {mulOp factor}
-factor → NUM | FALSE | TRUE | IDENT [index | params] | NOT factor | – factor | ( exp )
+factor → NUM | FALSE | TRUE | IDENT [index | params] | NOT factor | – factor | ( expr )
 relOp → < | <= | > | >= | = | <>
 addOp → + | – | OR
 mulOp → * | / | DIV | MOD | AND
