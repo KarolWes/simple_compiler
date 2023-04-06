@@ -154,7 +154,7 @@ int term(){
         return 1;
     }
     else{
-        return -1;
+        return 0;
     }
 }
 
@@ -169,7 +169,7 @@ int simpleExpr(){
         return 1;
     }
     else{
-        return -1;
+        return 0;
     }
 }
 
@@ -184,7 +184,7 @@ int expr(){
         return 1;
     }
     else{
-        return -1;
+        return 0;
     }
 }
 
@@ -196,50 +196,61 @@ int exprList(){
                 return -1;
             }
         }
+        return 1;
     }
     else{
-        return -1;
+        return 0;
     }
 }
 
 int whileStmt(){
-    int result = -1;
+    int result = 0;
     if(match(WHILE) == 1){
         if(expr() == 1){
             if(match(DO) == 1){
                 if(statement() == 1){
                     result = 1;
                 }
+                else{
+                    result = -1;
+                }
             }
+            else{
+                result = -1;
+            }
+        }
+        else{
+            result = -1;
         }
     }
     return result;
 }
 
 int ifStmt(){
-    int result = -1;
+    int result = 0;
     if(match(IF) == 1){
         if(expr() == 1){
             if(match(THEN) == 1){
                 if (statement() == 1){
-                    if(match(ELSE) == 1){
+                    int tmp = match(ELSE);
+                    if(tmp == 1){
                         if(statement() == 1){
                             result = 1;
                         }
-                        else{
-                            return -1;
-                        }
+                        else{return -1;}
                     }
-                    result = 1;
-                }
-            }
-        }
+                    else if(tmp == 0){
+                        result = 1;
+                    }else{result = -1;}
+                }else{result = -1;}
+            }else{result = -1;}
+        }else{result = -1;}
     }
     return result;
 }
 
 int index(){
-    int result = -1;
+    int result = 0;
     if(match(BRAC_OPEN) == 1){
         if(expr() == 1){
             if(match(RANGE) == 1){
@@ -253,16 +264,119 @@ int index(){
             if(match(BRAC_CLOSE) == 1){
                 result = 1;
             }
+            else{result = -1;}
+        }
+        else{result = -1;}
+    }
+    return result;
+}
+
+int assignStmt(){
+    int result = 0;
+    if(match(ID) == 1){
+        if (index() != -1){
+            if(match(ASSIGN) == 1){
+                if(expr() == 1){
+                    result = 1;
+                }else{result=-1;}
+            }else{result=-1;}
+        }else{result=-1;}
+    }
+    return result;
+}
+
+int params(){
+    int result = 0;
+    if(match(PARENTH_OPEN) == 1){
+        if(exprList() == 1){
+            if(match(PARENTH_CLOSE) == 1){
+                result = 1;
+            }
+        }else{result=-1;}
+    }
+    return result;
+}
+
+int procCall(){
+    int result = 0;
+    if (match(ID) == 1){
+        if(params() == -1){
+            result = -1;
+        }
+        else{
+            result = 1;
         }
     }
     return result;
 }
 
-int start(){
-    switch (token) {
-        case PROGRAM:
-
+int statement(){
+    int tmp = procCall();
+    switch (tmp) {
+        case 1:
+            return 1;
+        case -1:
+            return -1;
     }
+    tmp = assignStmt();
+    switch (tmp) {
+        case 1:
+            return 1;
+        case -1:
+            return -1;
+    }
+    tmp = compStmt();
+    switch (tmp) {
+        case 1:
+            return 1;
+        case -1:
+            return -1;
+    }
+    tmp = ifStmt();
+    switch (tmp) {
+        case 1:
+            return 1;
+        case -1:
+            return -1;
+    }
+    tmp = whileStmt();
+    switch (tmp) {
+        case 1:
+            return 1;
+        case -1:
+            return -1;
+    }
+    return 0;
+}
+
+int stmtList(){
+    int tmp = statement();
+    if(tmp == 1){
+        while(match(COLON)){
+            if(statement() != 1){
+                return -1;
+            }
+        }
+        return 1;
+    }
+    else{
+        return tmp;
+    }
+}
+
+int compStmt(){
+    int result = 0;
+    if(match(BEG) == 1){
+        if(stmtList() == 1){
+            if(match(END) == 1){
+                result = 1;
+            }else{result = -1;}
+        }else{result = -1;}
+    }
+    return result;
+}
+
+int start(){
 }
 
 
