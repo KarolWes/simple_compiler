@@ -1,13 +1,14 @@
 start → PROGRAM IDENT ; varDec subProgList compStmt .
 varDec → [VAR varDecList]
-varDecList → identListType ; {identListType ;}
+varDecList → parList ;
 identListType → identList : type
 identList → IDENT {, IDENT}
 type → simpleType  | ARRAY [ NUM .. NUM ] OF simpleType
 simpleType → INTEGER | REAL | BOOLEAN
-subProgList → [subProgHead varDec compStmt ; {subProgHead varDec compStmt ;}]
+subProgList → {subProgHead varDec compStmt ;}
 subProgHead → FUNCTION IDENT args : type ; | PROCEDURE IDENT args ;
-args → [( identListType )]
+args → [( parList )]
+parList → identListType {; identListType}
 compStmt → BEGIN stmtList END
 stmtList → statement {; statement}
 statement → procCall | assignStmt | compStmt | ifStmt | whileStmt

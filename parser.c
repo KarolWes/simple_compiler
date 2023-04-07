@@ -108,7 +108,7 @@ int factor(){
             break;
         case ID:
             result = match(ID);
-            if(result == 1 && (index() == 1 || params() == 1)){
+            if(result == 1 && (ind() == 1 || params() == 1)){
                 result = 1;
             }
             else{
@@ -249,7 +249,7 @@ int ifStmt(){
     return result;
 }
 
-int index(){
+int ind(){
     int result = 0;
     if(match(BRAC_OPEN) == 1){
         if(expr() == 1){
@@ -274,7 +274,7 @@ int index(){
 int assignStmt(){
     int result = 0;
     if(match(ID) == 1){
-        if (index() != -1){
+        if (ind() != -1){
             if(match(ASSIGN) == 1){
                 if(expr() == 1){
                     result = 1;
@@ -376,7 +376,181 @@ int compStmt(){
     return result;
 }
 
+int parList(){
+    int result = 0;
+    if(identListType() == 1){
+        while(match(COLON) == 1){
+            if(identListType() != 1){
+                return  -1;
+            }
+        }
+        result = 1;
+    }
+    return result;
+}
+
+int args(){
+    int result = 1;
+    if(match(PARENTH_OPEN) == 1){
+        if(parList()==1){
+            if(match(PARENTH_CLOSE) == 1){
+                result = 1;
+            }else{result = -1;}
+        }else{result = -1;}
+    }
+    return result;
+}
+
+int subProgHead(){
+    int f;
+    int result = 0;
+    if(match(FUNCTION) == 1){
+        f = 1;
+    }
+    else if(match(PROCEDURE) == 1){
+        f = 0;
+    }
+    else{
+        return result;
+    }
+    if(match(ID) == 1){
+        if(args() == 1){
+            if(f == 1){
+                if(match(COLON) == 1){
+                    if(type() == 1){
+                        result = 1;
+                    }else{result = -1;}
+                }else{result = -1;}
+            }
+            if(result == 1){
+                result = match(SEMICOLON);
+            }
+        }else{result = -1;}
+    }else{result = -1;}
+    return result;
+}
+
+int subProgList(){
+    int result = 1;
+    int test = subProgHead();
+    while(test == 1){
+        if(varDec() == 1){
+            if(compStmt() == 1){
+                if(match(SEMICOLON) == 1){
+                    test = subProgHead();
+                }else{test = -1;}
+            }else{test = -1;}
+        }else{test = -1;}
+    }
+    if(test == -1){
+        result = -1;
+    }
+    return result;
+}
+
+int simpleType(){
+    if (match(INTEGER) == 1 || match(REAL) == 1 || match(BOOLEAN) == 1){
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}
+
+int type(){
+    int tmp = simpleType();
+    int result = 0;
+    if(tmp == 1){
+        result = 1;
+    }
+    else if (tmp == 0){
+        if(match(ARRAY) == 1){
+            if(match(BRAC_OPEN) == 1){
+                if(match(NUM) == 1){
+                    if(match(RANGE) == 1){
+                        if(match(NUM) == 1){
+                            if(match(BRAC_CLOSE) == 1){
+                                if(match(OF) == 1){
+                                    if(simpleType() == 1){
+                                        result = 1;
+                                    }else{result = -1;}
+                                }else{result = -1;}
+                            }else{result = -1;}
+                        }else{result = -1;}
+                    }else{result = -1;}
+                }else{result = -1;}
+            }else{result = -1;}
+        }
+    }
+    else{result = -1;}
+    return result;
+}
+
+int identList(){
+    int result = 0;
+    if(match(ID) == 1){
+        while(match(COMA) == 1){
+            if(match(ID) != 1){
+                result = -1;
+            }
+        }
+        if(result == 0){
+            result = 1;
+        }
+    }
+    return result;
+}
+
+int identListType(){
+    int result = 0;
+    if(identList() == 1){
+        if(match(COLON) == 1){
+            if(type() == 1){
+                result = 1;
+            }else{result = -1;}
+        }else{result = -1;}
+    }
+    return result;
+}
+
+int varDecList(){
+    int result = 0;
+    if(parList() == 1){
+        if(match(SEMICOLON) == 1){
+            result = 1;
+        }else{result = -1;}
+    }
+    return result;
+}
+
+int varDec(){
+    int result = 1;
+    if(match(VAR) == 1){
+        if(varDecList() == 1){
+            result = 1;
+        }else{result = -1;}
+    }
+    return result;
+}
+
 int start(){
+    int result = -1;
+    if(match(PROGRAM) == 1){
+        if(match(ID) == 1){
+            if(match(SEMICOLON) == 1){
+                if(varDec() == 1){
+                    if(subProgList() == 1){
+                        if (compStmt() == 1){
+                            if(match(DOT) == 1){
+                                result = 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return result;
 }
 
 
