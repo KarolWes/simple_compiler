@@ -1,31 +1,24 @@
 #include <stdio.h>
-
-enum TokenType{AND=1, ARRAY, BEG, DIV, DO, ELSE, END,
-    FUNCTION, IF, MOD, NOT, OF, OR, PROCEDURE,
-    PROGRAM,  THEN, TYPE, VAR, WHILE,
-    INTEGER, REAL, BOOLEAN,
-    TRUE, FALSE,
-    COMMENT,
-    BRAC_OPEN, BRAC_CLOSE, PARENTH_OPEN, PARENTH_CLOSE,
-    COLON, SEMICOLON, COMA, DOT, RANGE, PLUS, MINUS,
-    MULTI, DIV_SIGN, NEQ, EQ, LT, GT, LEQ, GEQ, ASSIGN,
-    ID=101, NUM=100};
+#include "parser.h"
 
 enum TokenType token;
 
-int statement();
-
 int match(enum TokenType expected){
+    // matches token saved in memory with the expected one
+    // result is 1 if found, -1 if not
     if(token == expected){
         token = yylex();
         return 1;
     }
     else{
+        printf("Tokens doesn't match\n");
         return -1;
     }
 }
 
 int relOp(){
+    // relative operators
+    // 0 if not found, 1 if match is correct
     int result = 0;
     switch (token) {
         case LT:
@@ -47,7 +40,7 @@ int relOp(){
             result = match(NEQ);
             break;
         default:
-            result = -1;
+            result = 0;
     }
     return result;
 }
@@ -143,11 +136,17 @@ int factor(){
     return result;
 }
 
+// for all functions output is identical:
+// 0 -> not found
+// 1 -> found
+// -1 -> found, but error while parsing
+
 int term(){
     int result = factor();
     if(result == 1) {
         while (mulOp() == 1) {
             if (factor() != 1){
+                printf("Term doesn't contain second part\n");
                 return -1;
             }
         }
@@ -163,6 +162,7 @@ int simpleExpr(){
     if(result == 1) {
         while (addOp() == 1) {
             if (term() != 1){
+                printf("Simple Expression doesn't contain second part\n");
                 return -1;
             }
         }
@@ -178,6 +178,7 @@ int expr(){
     if(result == 1) {
         while (relOp() == 1) {
             if (simpleExpr() != 1){
+                printf("Expression doesn't contain second part\n");
                 return -1;
             }
         }
@@ -193,6 +194,7 @@ int exprList(){
     if(result == 1) {
         while (match(COMA) == 1) {
             if(expr() != 1){
+                printf("Expression list contains a conjunction, but lacks following part.\n");
                 return -1;
             }
         }
@@ -212,14 +214,17 @@ int whileStmt(){
                     result = 1;
                 }
                 else{
+                    printf("While statement lacks execution statement\n");
                     result = -1;
                 }
             }
             else{
+                printf("While statement lacks 'DO' keyword\n");
                 result = -1;
             }
         }
         else{
+            printf("While statement lacks condition expression\n");
             result = -1;
         }
     }
@@ -232,19 +237,30 @@ int ifStmt(){
         if(expr() == 1){
             if(match(THEN) == 1){
                 if (statement() == 1){
-                    int tmp = match(ELSE);
-                    if(tmp == 1){
+                    if(match(ELSE) == 1){
                         if(statement() == 1){
                             result = 1;
                         }
-                        else{return -1;}
+                        else{
+                            printf("If statement lacks execution statement in else\n");
+                            return -1;
+                        }
                     }
-                    else if(tmp == 0){
+                    else{
                         result = 1;
-                    }else{result = -1;}
-                }else{result = -1;}
-            }else{result = -1;}
-        }else{result = -1;}
+                    }
+                }else{
+                    printf("If statement lacks execution statement\n");
+                    return -1;
+                }
+            }else{
+                printf("If statement lacks 'THEN' keyword\n");
+                return -1;
+            }
+        }else{
+            printf("If statement lacks condition expression\n");
+            return -1;
+        }
     }
     return result;
 }
@@ -258,15 +274,20 @@ int ind(){
                     result = 1;
                 }
                 else{
+                    printf("Index lacks second expression\n");
                     return -1;
                 }
             }
             if(match(BRAC_CLOSE) == 1){
                 result = 1;
+            }else{
+                printf("Index lacks closing bracket\n");
+                return -1;
             }
-            else{result = -1;}
+        }else{
+            printf("Index lacks expression\n");
+            return -1;
         }
-        else{result = -1;}
     }
     return result;
 }
