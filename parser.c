@@ -17,6 +17,7 @@ int match(enum TokenType expected){
 }
 
 int relOp(){
+    // TODO: refactor
     // relative operators
     // 0 if not found, 1 if match is correct
     int result = 0;
@@ -46,6 +47,7 @@ int relOp(){
 }
 
 int addOp(){
+    // TODO: refactor
     int result = 0;
     switch (token) {
         case PLUS:
@@ -64,6 +66,7 @@ int addOp(){
 }
 
 int mulOp(){
+    // TODO: refactor
     int result = 0;
     switch (token) {
         case MULTI:
@@ -88,6 +91,7 @@ int mulOp(){
 }
 
 int factor(){
+    // TODO: refactor
     int result = 0;
     switch (token) {
         case NUM:
@@ -243,7 +247,7 @@ int ifStmt(){
                         }
                         else{
                             printf("If statement lacks execution statement in else\n");
-                            return -1;
+                            result = -1;
                         }
                     }
                     else{
@@ -251,15 +255,15 @@ int ifStmt(){
                     }
                 }else{
                     printf("If statement lacks execution statement\n");
-                    return -1;
+                    result = -1;
                 }
             }else{
                 printf("If statement lacks 'THEN' keyword\n");
-                return -1;
+                result = -1;
             }
         }else{
             printf("If statement lacks condition expression\n");
-            return -1;
+            result = -1;
         }
     }
     return result;
@@ -275,18 +279,20 @@ int ind(){
                 }
                 else{
                     printf("Index lacks second expression\n");
-                    return -1;
+                    result = -1;
                 }
             }
-            if(match(BRAC_CLOSE) == 1){
-                result = 1;
-            }else{
-                printf("Index lacks closing bracket\n");
-                return -1;
+            if(result == 1){
+                if(match(BRAC_CLOSE) == 1){
+                    result = 1;
+                }else{
+                    printf("Index lacks closing bracket\n");
+                    result = -1;
+                }
             }
         }else{
             printf("Index lacks expression\n");
-            return -1;
+            result = -1;
         }
     }
     return result;
@@ -299,9 +305,18 @@ int assignStmt(){
             if(match(ASSIGN) == 1){
                 if(expr() == 1){
                     result = 1;
-                }else{result=-1;}
-            }else{result=-1;}
-        }else{result=-1;}
+                }else{
+                    printf("Assignment lacks expression\n");
+                    result = -1;
+                }
+            }else{
+                printf("Assignment lacks assignment sign\n");
+                result = -1;
+            }
+        }else{
+            printf("Index returns error\n");
+            result = -1;
+        }
     }
     return result;
 }
@@ -312,8 +327,14 @@ int params(){
         if(exprList() == 1){
             if(match(PARENTH_CLOSE) == 1){
                 result = 1;
+            }else{
+                printf("Missing closing parenthesis\n");
+                result = -1;
             }
-        }else{result=-1;}
+        }else{
+            printf("Parameter lacks expressions\n");
+            result = -1;
+        }
     }
     return result;
 }
@@ -322,6 +343,7 @@ int procCall(){
     int result = 0;
     if (match(ID) == 1){
         if(params() == -1){
+            printf("Procedure call: error in parameters\n");
             result = -1;
         }
         else{
@@ -337,6 +359,7 @@ int statement(){
         case 1:
             return 1;
         case -1:
+            printf("Statement: error in procedure call\n");
             return -1;
     }
     tmp = assignStmt();
@@ -344,6 +367,7 @@ int statement(){
         case 1:
             return 1;
         case -1:
+            printf("Statement: error in procedure call\n");
             return -1;
     }
     tmp = compStmt();
@@ -351,6 +375,7 @@ int statement(){
         case 1:
             return 1;
         case -1:
+            printf("Statement: error in computation\n");
             return -1;
     }
     tmp = ifStmt();
@@ -358,6 +383,7 @@ int statement(){
         case 1:
             return 1;
         case -1:
+            printf("Statement: error in if\n");
             return -1;
     }
     tmp = whileStmt();
@@ -365,6 +391,7 @@ int statement(){
         case 1:
             return 1;
         case -1:
+            printf("Statement: error in while\n");
             return -1;
     }
     return 0;
@@ -375,6 +402,7 @@ int stmtList(){
     if(tmp == 1){
         while(match(COLON)){
             if(statement() != 1){
+                printf("Statement list: error in statement\n");
                 return -1;
             }
         }
@@ -391,8 +419,14 @@ int compStmt(){
         if(stmtList() == 1){
             if(match(END) == 1){
                 result = 1;
-            }else{result = -1;}
-        }else{result = -1;}
+            }else{
+                printf("Computation statement lacks END keyword\n");
+                result = -1;
+            }
+        }else{
+            printf("Computation statement lacks statements list\n");
+            result = -1;
+        }
     }
     return result;
 }
@@ -402,6 +436,7 @@ int parList(){
     if(identListType() == 1){
         while(match(COLON) == 1){
             if(identListType() != 1){
+                printf("Parameter list: error in identifier list type \n");
                 return  -1;
             }
         }
@@ -416,8 +451,14 @@ int args(){
         if(parList()==1){
             if(match(PARENTH_CLOSE) == 1){
                 result = 1;
-            }else{result = -1;}
-        }else{result = -1;}
+            }else{
+                printf("Arguments lack closing parenthesis\n");
+                result = -1;
+            }
+        }else{
+            printf("Arguments lack parameters list\n");
+            result = -1;
+        }
     }
     return result;
 }
@@ -440,14 +481,26 @@ int subProgHead(){
                 if(match(COLON) == 1){
                     if(type() == 1){
                         result = 1;
-                    }else{result = -1;}
-                }else{result = -1;}
+                    }else{
+                        printf("Subprogram header lacks type\n");
+                        result = -1;
+                    }
+                }else{
+                    printf("Subprogram header lacks colon\n");
+                    result = -1;
+                }
             }
             if(result == 1){
                 result = match(SEMICOLON);
             }
-        }else{result = -1;}
-    }else{result = -1;}
+        }else{
+            printf("Subprogram header lacks arguments\n");
+            result = -1;
+        }
+    }else{
+        printf("Subprogram header lacks identifier\n");
+        result = -1;
+    }
     return result;
 }
 
@@ -459,11 +512,21 @@ int subProgList(){
             if(compStmt() == 1){
                 if(match(SEMICOLON) == 1){
                     test = subProgHead();
-                }else{test = -1;}
-            }else{test = -1;}
-        }else{test = -1;}
+                }else{
+                    printf("Subprogram list lacks semicolon\n");
+                    result = -1;
+                }
+            }else{
+                printf("Subprogram list lacks computation statement\n");
+                result = -1;
+            }
+        }else{
+            printf("Subprogram list: error in variable declaration\n");
+            result = -1;
+        }
     }
     if(test == -1){
+        printf("Subprogram list: error in subprogram header\n");
         result = -1;
     }
     return result;
@@ -494,16 +557,40 @@ int type(){
                                 if(match(OF) == 1){
                                     if(simpleType() == 1){
                                         result = 1;
-                                    }else{result = -1;}
-                                }else{result = -1;}
-                            }else{result = -1;}
-                        }else{result = -1;}
-                    }else{result = -1;}
-                }else{result = -1;}
-            }else{result = -1;}
+                                    }else{
+                                        printf("Type lacks simple type\n");
+                                        result = -1;
+                                    }
+                                }else{
+                                    printf("Type lacks OF keyword\n");
+                                    result = -1;
+                                }
+                            }else{
+                                printf("Type lacks closing bracket\n");
+                                result = -1;
+                            }
+                        }else{
+                            printf("Type lacks second number\n");
+                            result = -1;
+                        }
+                    }else{
+                        printf("Type lacks range operator\n");
+                        result = -1;
+                    }
+                }else{
+                    printf("Type lacks first number\n");
+                    result = -1;
+                }
+            }else{
+                printf("Type lacks opening bracket\n");
+                result = -1;
+            }
         }
     }
-    else{result = -1;}
+    else{
+        printf("Type: error in simple type\n");
+        result = -1;
+    }
     return result;
 }
 
@@ -512,6 +599,7 @@ int identList(){
     if(match(ID) == 1){
         while(match(COMA) == 1){
             if(match(ID) != 1){
+                printf("Identifier list lacks following identifier\n");
                 result = -1;
             }
         }
@@ -528,8 +616,14 @@ int identListType(){
         if(match(COLON) == 1){
             if(type() == 1){
                 result = 1;
-            }else{result = -1;}
-        }else{result = -1;}
+            }else{
+                printf("Identifier list type lacks type\n");
+                result = -1;
+            }
+        }else{
+            printf("Identifier list type lacks colon\n");
+            result = -1;
+        }
     }
     return result;
 }
@@ -539,7 +633,10 @@ int varDecList(){
     if(parList() == 1){
         if(match(SEMICOLON) == 1){
             result = 1;
-        }else{result = -1;}
+        }else{
+            printf("Variable declaration list lacks semicolon\n");
+            result = -1;
+        }
     }
     return result;
 }
@@ -549,7 +646,10 @@ int varDec(){
     if(match(VAR) == 1){
         if(varDecList() == 1){
             result = 1;
-        }else{result = -1;}
+        }else{
+            printf("Variables declaration lacks variable declaration list\n");
+            result = -1;
+        }
     }
     return result;
 }
