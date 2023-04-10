@@ -12,130 +12,91 @@ int match(enum TokenType expected){
     }
     else{
         printf("Tokens doesn't match\n");
-        return -1;
+        return 0;
     }
 }
 
 int relOp(){
-    // TODO: refactor
     // relative operators
     // 0 if not found, 1 if match is correct
     int result = 0;
-    switch (token) {
-        case LT:
-            result = match(LT);
-            break;
-        case LEQ:
-            result = match(LEQ);
-            break;
-        case GT:
-            result = match(GT);
-            break;
-        case GEQ:
-            result = match(GEQ);
-            break;
-        case EQ:
-            result = match(EQ);
-            break;
-        case NEQ:
-            result = match(NEQ);
-            break;
-        default:
-            result = 0;
+    if(match(LT) == 1 || match(LEQ) == 1 ||
+            match(GT) == 1 || match(GEQ) == 1||
+            match(EQ) == 1 || match(NEQ) == 1){
+        result = 1;
     }
     return result;
 }
 
 int addOp(){
-    // TODO: refactor
     int result = 0;
-    switch (token) {
-        case PLUS:
-            result = match(PLUS);
-            break;
-        case MINUS:
-            result = match(MINUS);
-            break;
-        case OR:
-            result = match(OR);
-            break;
-        default:
-            result = -1;
+    if(match(PLUS) == 1 || match(MINUS) == 1 || match(OR) == 1){
+        result = 1;
     }
     return result;
 }
 
 int mulOp(){
-    // TODO: refactor
     int result = 0;
-    switch (token) {
-        case MULTI:
-            result = match(MULTI);
-            break;
-        case DIV_SIGN:
-            result = match(DIV_SIGN);
-            break;
-        case DIV:
-            result = match(DIV);
-            break;
-        case MOD:
-            result = match(MOD);
-            break;
-        case AND:
-            result = match(AND);
-            break;
-        default:
-            result = -1;
+    if(match(MULTI) == 1 || match(DIV_SIGN) ||
+            match(DIV) == 1 || match(MOD) == 1 ||
+            match(AND) == 1)
+    {
+        result = 1;
     }
     return result;
 }
 
 int factor(){
-    // TODO: refactor
     int result = 0;
-    switch (token) {
-        case NUM:
-            result = match(NUM);
-            break;
-        case FALSE:
-            result = match(FALSE);
-            break;
-        case TRUE:
-            result = match(TRUE);
-            break;
-        case ID:
-            result = match(ID);
-            if(result == 1 && (ind() == 1 || params() == 1)){
+
+    if(match(NUM) == 1 || match(FALSE) == 1 || match(TRUE) == 1){
+        result = 1;
+    }
+    else if(match(ID) == 1){
+        int tmp = ind();
+        switch (tmp) {
+            case 1:
                 result = 1;
-            }
-            else{
+                break;
+            case -1:
+                printf("Factor: error in index expression\n");
                 result = -1;
-            }
-            break;
-        case NOT:
-            if(match(NOT) == 1)
-                result = factor();
-            break;
-        case MINUS:
-            if(match(MINUS))
-                result = factor();
-            break;
-        case PARENTH_OPEN:
-            if(match(PARENTH_OPEN) == 1) {
-                int tmp = expr();
-                if(tmp == 1 && match(PARENTH_CLOSE) == 1){
-                    result = 1;
+                break;
+            case 0:
+                tmp = params();
+                switch (tmp) {
+                    case 1:
+                        result = 1;
+                        break;
+                    case -1:
+                        printf("Factor: error in parameters\n");
+                        result = -1;
+                        break;
+                    case 0:
+                        result = 1;
                 }
-                else{
-                    result = -1;
-                }
-            }
-            else{
-                result = -1;
-            }
-            break;
-        default:
+        }
+    }else if(match(NOT) == 1 || match(MINUS) == 1){
+        int tmp = factor();
+        if(tmp == 1) {
+            result = 1;
+        }else{
+            printf("factor lacks second part of negation\n");
             result = -1;
+        }
+    }else if(match(PARENTH_OPEN)){
+        if(expr() == 1){
+            if(match(PARENTH_CLOSE) == 1){
+                result = 1;
+            }else{
+                printf("Factor lacks closing parenthesis\n");
+                result = -1;
+            }
+        }else{
+            printf("Factor lacks expression inside parenthesis\n");
+            result = -1;
+        }
     }
     return result;
 }
