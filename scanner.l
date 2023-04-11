@@ -3,17 +3,7 @@
 %{
 #include <stdio.h>
 #include <string.h>
-    enum TokenType{AND=1, ARRAY, BEG, DIV, DO, ELSE, END,
-                 FUNCTION, IF, MOD, NOT, OF, OR, PROCEDURE,
-                 PROGRAM,  THEN, TYPE, VAR, WHILE,
-				 INTEGER, REAL, BOOLEAN,
-				 TRUE, FALSE,
-                  COMMENT,
-                  BRAC_OPEN, BRAC_CLOSE, PARENTH_OPEN, PARENTH_CLOSE,
-                  COLON, SEMICOLON, COMA, DOT, RANGE, PLUS, MINUS,
-                  MULTI, DIV_SIGN, NEQ, EQ, LT, GT, LEQ, GEQ, ASSIGN,
-                  ID=101, NUM=100};
-
+#include "parser.h"
 %}
 comment "{"[^"}"]*"}"
 whitespace  [ \t\n]
@@ -33,8 +23,8 @@ alpha_digit {alpha}|{digit}
 
 "." return DOT;
 "," return COMA;
-";" return COLON;
-":" return SEMICOLON;
+":" return COLON;
+";" return SEMICOLON;
 ".." return RANGE;
 "+" return PLUS;
 "-" return MINUS;
@@ -91,13 +81,5 @@ alpha_digit {alpha}|{digit}
 %%
 
 int main(int argc, char **argv) {
-
-//    int res = yylex();
-//    while (res != 0){
-//        printf("%d\n", res);
-//        res = yylex();
-//    }
-//    printf("%s", yytext);
-//    return 0;
-    yylex();
+    printf("%d", start());
 }

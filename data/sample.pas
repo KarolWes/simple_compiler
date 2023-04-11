@@ -1,7 +1,3 @@
-{ This program implements some famous algorithms }
-
-
-?
 program minipas;
 
   var a: integer;

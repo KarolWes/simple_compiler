@@ -11,12 +11,13 @@ int match(enum TokenType expected){
         return 1;
     }
     else{
-        printf("Tokens doesn't match\n");
+        printf("Tokens doesn't match. Expected: %d, got %d\n", expected, token);
         return 0;
     }
 }
 
 int relOp(){
+    printf("Debug Log: in relOp\n");
     // relative operators
     // 0 if not found, 1 if match is correct
     int result = 0;
@@ -29,6 +30,7 @@ int relOp(){
 }
 
 int addOp(){
+    printf("Debug Log: in addOp\n");
     int result = 0;
     if(match(PLUS) == 1 || match(MINUS) == 1 || match(OR) == 1){
         result = 1;
@@ -37,6 +39,7 @@ int addOp(){
 }
 
 int mulOp(){
+    printf("Debug Log: in mulOp\n");
     int result = 0;
     if(match(MULTI) == 1 || match(DIV_SIGN) ||
             match(DIV) == 1 || match(MOD) == 1 ||
@@ -48,6 +51,7 @@ int mulOp(){
 }
 
 int factor(){
+    printf("Debug Log: in factor\n");
     int result = 0;
 
     if(match(NUM) == 1 || match(FALSE) == 1 || match(TRUE) == 1){
@@ -107,6 +111,7 @@ int factor(){
 // -1 -> found, but error while parsing
 
 int term(){
+    printf("Debug Log: in term\n");
     int result = factor();
     if(result == 1) {
         while (mulOp() == 1) {
@@ -123,6 +128,7 @@ int term(){
 }
 
 int simpleExpr(){
+    printf("Debug Log: in simpleExpr\n");
     int result = term();
     if(result == 1) {
         while (addOp() == 1) {
@@ -139,6 +145,7 @@ int simpleExpr(){
 }
 
 int expr(){
+    printf("Debug Log: in expr\n");
     int result = simpleExpr();
     if(result == 1) {
         while (relOp() == 1) {
@@ -155,6 +162,7 @@ int expr(){
 }
 
 int exprList(){
+    printf("Debug Log: in exprList\n");
     int result = expr();
     if(result == 1) {
         while (match(COMA) == 1) {
@@ -171,6 +179,7 @@ int exprList(){
 }
 
 int whileStmt(){
+    printf("Debug Log: in whileStmt\n");
     int result = 0;
     if(match(WHILE) == 1){
         if(expr() == 1){
@@ -197,6 +206,7 @@ int whileStmt(){
 }
 
 int ifStmt(){
+    printf("Debug Log: in ifStmt\n");
     int result = 0;
     if(match(IF) == 1){
         if(expr() == 1){
@@ -231,6 +241,7 @@ int ifStmt(){
 }
 
 int ind(){
+    printf("Debug Log: in ind\n");
     int result = 0;
     if(match(BRAC_OPEN) == 1){
         if(expr() == 1){
@@ -260,6 +271,7 @@ int ind(){
 }
 
 int assignStmt(){
+    printf("Debug Log: in assignStmt\n");
     int result = 0;
     if(match(ID) == 1){
         if (ind() != -1){
@@ -283,6 +295,7 @@ int assignStmt(){
 }
 
 int params(){
+    printf("Debug Log: in params\n");
     int result = 0;
     if(match(PARENTH_OPEN) == 1){
         if(exprList() == 1){
@@ -301,6 +314,7 @@ int params(){
 }
 
 int procCall(){
+    printf("Debug Log: in procCall\n");
     int result = 0;
     if (match(ID) == 1){
         if(params() == -1){
@@ -315,6 +329,7 @@ int procCall(){
 }
 
 int statement(){
+    printf("Debug Log: in statement\n");
     int tmp = procCall();
     switch (tmp) {
         case 1:
@@ -359,6 +374,7 @@ int statement(){
 }
 
 int stmtList(){
+    printf("Debug Log: in stmtList\n");
     int tmp = statement();
     if(tmp == 1){
         while(match(COLON)){
@@ -375,6 +391,7 @@ int stmtList(){
 }
 
 int compStmt(){
+    printf("Debug Log: in compStmt\n");
     int result = 0;
     if(match(BEG) == 1){
         if(stmtList() == 1){
@@ -393,6 +410,7 @@ int compStmt(){
 }
 
 int parList(){
+    printf("Debug Log: in parList\n");
     int result = 0;
     if(identListType() == 1){
         while(match(COLON) == 1){
@@ -407,6 +425,7 @@ int parList(){
 }
 
 int args(){
+    printf("Debug Log: in args\n");
     int result = 1;
     if(match(PARENTH_OPEN) == 1){
         if(parList()==1){
@@ -425,6 +444,7 @@ int args(){
 }
 
 int subProgHead(){
+    printf("Debug Log: in subProgHead\n");
     int f;
     int result = 0;
     if(match(FUNCTION) == 1){
@@ -466,6 +486,7 @@ int subProgHead(){
 }
 
 int subProgList(){
+    printf("Debug Log: in subProgList\n");
     int result = 1;
     int test = subProgHead();
     while(test == 1){
@@ -494,6 +515,7 @@ int subProgList(){
 }
 
 int simpleType(){
+    printf("Debug Log: in simpleType\n");
     if (match(INTEGER) == 1 || match(REAL) == 1 || match(BOOLEAN) == 1){
         return 1;
     }
@@ -503,6 +525,7 @@ int simpleType(){
 }
 
 int type(){
+    printf("Debug Log: in type\n");
     int tmp = simpleType();
     int result = 0;
     if(tmp == 1){
@@ -556,6 +579,7 @@ int type(){
 }
 
 int identList(){
+    printf("Debug Log: in identList\n");
     int result = 0;
     if(match(ID) == 1){
         while(match(COMA) == 1){
@@ -572,6 +596,7 @@ int identList(){
 }
 
 int identListType(){
+    printf("Debug Log: in identListType\n");
     int result = 0;
     if(identList() == 1){
         if(match(COLON) == 1){
@@ -590,6 +615,7 @@ int identListType(){
 }
 
 int varDecList(){
+    printf("Debug Log: in varDecList\n");
     int result = 0;
     if(parList() == 1){
         if(match(SEMICOLON) == 1){
@@ -603,6 +629,7 @@ int varDecList(){
 }
 
 int varDec(){
+    printf("Debug Log: in varDec\n");
     int result = 1;
     if(match(VAR) == 1){
         if(varDecList() == 1){
@@ -616,6 +643,8 @@ int varDec(){
 }
 
 int start(){
+    token = yylex();
+    printf("Debug Log: in start\n");
     int result = -1;
     if(match(PROGRAM) == 1){
         if(match(ID) == 1){
