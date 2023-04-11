@@ -12,7 +12,7 @@ parList → identListType {; identListType}
 compStmt → BEGIN stmtList END
 stmtList → statement {; statement}
 statement → procCall | assignStmt | compStmt | ifStmt | whileStmt
-procCall → flex [params]
+procCall → [params]
 params → ( exprList )
 assignStmt → IDENT [index] := expr
 index → \[ expr [.. expr] \]

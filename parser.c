@@ -413,7 +413,7 @@ int parList(){
     printf("Debug Log: in parList\n");
     int result = 0;
     if(identListType() == 1){
-        while(match(COLON) == 1){
+        while(match(SEMICOLON) == 1){
             if(identListType() != 1){
                 printf("Parameter list: error in identifier list type \n");
                 return  -1;

@@ -71,7 +71,7 @@ alpha_digit {alpha}|{digit}
 "div" return DIV;
 "mod" return MOD;
 
-{alpha}{alpha_digit}* return ID;
+{alpha}{alpha_digit}* {printf("%s\n", yytext); return ID;}
 
 . {
 	printf("\tError: Unrecognised character %s\n", yytext);
