@@ -31,7 +31,7 @@ int parList();
 int compStmt();
 int stmtList();
 int statement();
-int procCall();
+int procOrAssign();
 int params();
 int assignStmt();
 int ind();

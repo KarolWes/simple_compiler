@@ -71,7 +71,10 @@ alpha_digit {alpha}|{digit}
 "div" return DIV;
 "mod" return MOD;
 
-{alpha}{alpha_digit}* {printf("%s\n", yytext); return ID;}
+{alpha}{alpha_digit}* {
+    // printf("\t%s\n", yytext);
+    return ID;
+}
 
 . {
 	printf("\tError: Unrecognised character %s\n", yytext);
@@ -81,5 +84,9 @@ alpha_digit {alpha}|{digit}
 %%
 
 int main(int argc, char **argv) {
-    printf("%d", start());
+    int res = start();
+    if(res == 1){
+        printf("Parsing complete with success\n");
+    }
+    printf("%d", res);
 }

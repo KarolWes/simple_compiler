@@ -1,6 +1,6 @@
 start → PROGRAM IDENT ; varDec subProgList compStmt .
 varDec → [VAR varDecList]
-varDecList → parList ;
+varDecList → identListType ; { identListType ; }
 identListType → identList : type
 identList → IDENT {, IDENT}
 type → simpleType  | ARRAY [ NUM .. NUM ] OF simpleType
@@ -11,10 +11,10 @@ args → [( parList )]
 parList → identListType {; identListType}
 compStmt → BEGIN stmtList END
 stmtList → statement {; statement}
-statement → procCall | assignStmt | compStmt | ifStmt | whileStmt
-procCall → [params]
-params → ( exprList )
-assignStmt → IDENT [index] := expr
+statement → IDENT procOrAssign | compStmt | ifStmt | whileStmt
+procOrAssign → params | assignStmt
+params → ( [exprList] )
+assignStmt → [index] := expr
 index → \[ expr [.. expr] \]
 ifStmt → IF expr THEN statement [ELSE statement]
 whileStmt → WHILE expr DO statement
@@ -26,3 +26,5 @@ factor → NUM | FALSE | TRUE | IDENT [index | params] | NOT factor | – factor
 relOp → < | <= | > | >= | = | <>
 addOp → + | – | OR
 mulOp → * | / | DIV | MOD | AND
+
+With help of Fabian Oraze

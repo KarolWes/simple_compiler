@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <conio.h>
 #include "parser.h"
 
 enum TokenType token;
@@ -11,13 +12,13 @@ int match(enum TokenType expected){
         return 1;
     }
     else{
-        printf("Tokens doesn't match. Expected: %d, got %d\n", expected, token);
+//        printf("Debug Log: Tokens doesn't match. Expected: %d, got %d\n", expected, token);
         return 0;
     }
 }
 
 int relOp(){
-    printf("Debug Log: in relOp\n");
+//    printf("Debug Log: in relOp\n");
     // relative operators
     // 0 if not found, 1 if match is correct
     int result = 0;
@@ -26,20 +27,22 @@ int relOp(){
             match(EQ) == 1 || match(NEQ) == 1){
         result = 1;
     }
+//    printf("Debug Log: exiting relOp\n");
     return result;
 }
 
 int addOp(){
-    printf("Debug Log: in addOp\n");
+//    printf("Debug Log: in addOp\n");
     int result = 0;
     if(match(PLUS) == 1 || match(MINUS) == 1 || match(OR) == 1){
         result = 1;
     }
+//    printf("Debug Log: exiting addOp\n");
     return result;
 }
 
 int mulOp(){
-    printf("Debug Log: in mulOp\n");
+//    printf("Debug Log: in mulOp\n");
     int result = 0;
     if(match(MULTI) == 1 || match(DIV_SIGN) ||
             match(DIV) == 1 || match(MOD) == 1 ||
@@ -47,11 +50,12 @@ int mulOp(){
     {
         result = 1;
     }
+//    printf("Debug Log: exiting mulOp\n");
     return result;
 }
 
 int factor(){
-    printf("Debug Log: in factor\n");
+//    printf("Debug Log: in factor\n");
     int result = 0;
 
     if(match(NUM) == 1 || match(FALSE) == 1 || match(TRUE) == 1){
@@ -102,6 +106,7 @@ int factor(){
             result = -1;
         }
     }
+//    printf("Debug Log: exiting factor\n");
     return result;
 }
 
@@ -111,7 +116,7 @@ int factor(){
 // -1 -> found, but error while parsing
 
 int term(){
-    printf("Debug Log: in term\n");
+//    printf("Debug Log: in term\n");
     int result = factor();
     if(result == 1) {
         while (mulOp() == 1) {
@@ -120,15 +125,17 @@ int term(){
                 return -1;
             }
         }
+//        printf("Debug Log: exiting term\n");
         return 1;
     }
     else{
+//        printf("Debug Log: exiting term\n");
         return 0;
     }
 }
 
 int simpleExpr(){
-    printf("Debug Log: in simpleExpr\n");
+//    printf("Debug Log: in simpleExpr\n");
     int result = term();
     if(result == 1) {
         while (addOp() == 1) {
@@ -137,15 +144,17 @@ int simpleExpr(){
                 return -1;
             }
         }
+//        printf("Debug Log: exiting simpleExpr\n");
         return 1;
     }
     else{
+//        printf("Debug Log: exiting simpleExpr\n");
         return 0;
     }
 }
 
 int expr(){
-    printf("Debug Log: in expr\n");
+//    printf("Debug Log: in expr\n");
     int result = simpleExpr();
     if(result == 1) {
         while (relOp() == 1) {
@@ -154,15 +163,17 @@ int expr(){
                 return -1;
             }
         }
+//        printf("Debug Log: exiting expr\n");
         return 1;
     }
     else{
+//        printf("Debug Log: exiting expr\n");
         return 0;
     }
 }
 
 int exprList(){
-    printf("Debug Log: in exprList\n");
+//    printf("Debug Log: in exprList\n");
     int result = expr();
     if(result == 1) {
         while (match(COMA) == 1) {
@@ -171,15 +182,17 @@ int exprList(){
                 return -1;
             }
         }
+//        printf("Debug Log: exiting exprList\n");
         return 1;
     }
     else{
+//        printf("Debug Log: exiting exprList\n");
         return 0;
     }
 }
 
 int whileStmt(){
-    printf("Debug Log: in whileStmt\n");
+//    printf("Debug Log: in whileStmt\n");
     int result = 0;
     if(match(WHILE) == 1){
         if(expr() == 1){
@@ -202,11 +215,12 @@ int whileStmt(){
             result = -1;
         }
     }
+//    printf("Debug Log: exiting while\n");
     return result;
 }
 
 int ifStmt(){
-    printf("Debug Log: in ifStmt\n");
+//    printf("Debug Log: in ifStmt\n");
     int result = 0;
     if(match(IF) == 1){
         if(expr() == 1){
@@ -237,11 +251,12 @@ int ifStmt(){
             result = -1;
         }
     }
+//    printf("Debug Log: exiting if\n");
     return result;
 }
 
 int ind(){
-    printf("Debug Log: in ind\n");
+//    printf("Debug Log: in ind\n");
     int result = 0;
     if(match(BRAC_OPEN) == 1){
         if(expr() == 1){
@@ -254,7 +269,7 @@ int ind(){
                     result = -1;
                 }
             }
-            if(result == 1){
+            if(result != -1){
                 if(match(BRAC_CLOSE) == 1){
                     result = 1;
                 }else{
@@ -267,54 +282,55 @@ int ind(){
             result = -1;
         }
     }
+//    printf("Debug Log: exiting index\n");
     return result;
 }
 
 int assignStmt(){
-    printf("Debug Log: in assignStmt\n");
+//    printf("Debug Log: in assignStmt\n");
     int result = 0;
-    if(match(ID) == 1){
-        if (ind() != -1){
-            if(match(ASSIGN) == 1){
-                if(expr() == 1){
-                    result = 1;
-                }else{
-                    printf("Assignment lacks expression\n");
-                    result = -1;
-                }
+    if (ind() != -1){
+        if(match(ASSIGN) == 1){
+            if(expr() == 1){
+                result = 1;
             }else{
-                printf("Assignment lacks assignment sign\n");
+                printf("Assignment lacks expression\n");
                 result = -1;
             }
         }else{
-            printf("Index returns error\n");
+            printf("Assignment lacks assignment sign\n");
             result = -1;
         }
+    }else{
+        printf("Index returns error\n");
+        result = -1;
     }
+//    printf("Debug Log: exiting assignment\n");
     return result;
 }
 
 int params(){
-    printf("Debug Log: in params\n");
+//    printf("Debug Log: in params\n");
     int result = 0;
     if(match(PARENTH_OPEN) == 1){
-        if(exprList() == 1){
+        if(exprList() == -1){
+            printf("Parameter: error in expressions\n");
+            result = -1;
+        }else{
             if(match(PARENTH_CLOSE) == 1){
                 result = 1;
             }else{
                 printf("Missing closing parenthesis\n");
                 result = -1;
             }
-        }else{
-            printf("Parameter lacks expressions\n");
-            result = -1;
         }
     }
+//    printf("Debug Log: exiting params\n");
     return result;
 }
 
 int procCall(){
-    printf("Debug Log: in procCall\n");
+//    printf("Debug Log: in procCall\n");
     int result = 0;
     if (match(ID) == 1){
         if(params() == -1){
@@ -325,17 +341,18 @@ int procCall(){
             result = 1;
         }
     }
+//    printf("Debug Log: exiting procCall\n");
     return result;
 }
 
-int statement(){
-    printf("Debug Log: in statement\n");
-    int tmp = procCall();
+int procOrAssign() {
+//    printf("Debug Log: in procedure call or assignment\n");
+    int tmp = params();
     switch (tmp) {
         case 1:
             return 1;
         case -1:
-            printf("Statement: error in procedure call\n");
+            printf("Procedure call or assignment: error in parameters\n");
             return -1;
     }
     tmp = assignStmt();
@@ -343,8 +360,25 @@ int statement(){
         case 1:
             return 1;
         case -1:
-            printf("Statement: error in procedure call\n");
+            printf("Procedure call or assignment: error in assignment\n");
             return -1;
+        default:
+            return 0;
+    }
+}
+
+int statement(){
+//    printf("Debug Log: in statement\n");
+    int tmp;
+    if(match(ID) == 1){
+        tmp = procOrAssign();
+        switch (tmp) {
+            case 1:
+                return 1;
+            case -1:
+                printf("Statement: error in procedure call or assigment\n");
+                return -1;
+        }
     }
     tmp = compStmt();
     switch (tmp) {
@@ -374,24 +408,26 @@ int statement(){
 }
 
 int stmtList(){
-    printf("Debug Log: in stmtList\n");
+//    printf("Debug Log: in stmtList\n");
     int tmp = statement();
     if(tmp == 1){
-        while(match(COLON)){
+        while(match(SEMICOLON)){
             if(statement() != 1){
                 printf("Statement list: error in statement\n");
                 return -1;
             }
         }
+//        printf("Debug Log: exiting stmtList\n");
         return 1;
     }
     else{
+//        printf("Debug Log: exiting stmtList\n");
         return tmp;
     }
 }
 
 int compStmt(){
-    printf("Debug Log: in compStmt\n");
+//    printf("Debug Log: in compStmt\n");
     int result = 0;
     if(match(BEG) == 1){
         if(stmtList() == 1){
@@ -406,11 +442,12 @@ int compStmt(){
             result = -1;
         }
     }
+//    printf("Debug Log: exiting compStmt\n");
     return result;
 }
 
 int parList(){
-    printf("Debug Log: in parList\n");
+//    printf("Debug Log: in parList\n");
     int result = 0;
     if(identListType() == 1){
         while(match(SEMICOLON) == 1){
@@ -421,11 +458,12 @@ int parList(){
         }
         result = 1;
     }
+//    printf("Debug Log: exiting parList\n");
     return result;
 }
 
 int args(){
-    printf("Debug Log: in args\n");
+//    printf("Debug Log: in args\n");
     int result = 1;
     if(match(PARENTH_OPEN) == 1){
         if(parList()==1){
@@ -440,11 +478,12 @@ int args(){
             result = -1;
         }
     }
+//    printf("Debug Log: exiting args\n");
     return result;
 }
 
 int subProgHead(){
-    printf("Debug Log: in subProgHead\n");
+//    printf("Debug Log: in subProgHead\n");
     int f;
     int result = 0;
     if(match(FUNCTION) == 1){
@@ -454,13 +493,19 @@ int subProgHead(){
         f = 0;
     }
     else{
+//        printf("Debug Log: exiting subProgHead with state 0\n");
         return result;
     }
     if(match(ID) == 1){
+//        printf("Debug Log: Func/Proc: Id matched\n");
         if(args() == 1){
+//            printf("Debug Log: Func/Proc: args matched\n");
             if(f == 1){
+//                printf("Debug Log: Func: proceeding\n");
                 if(match(COLON) == 1){
+//                    printf("Debug Log: Func: colon matched\n");
                     if(type() == 1){
+//                        printf("Debug Log: Func: return type matched\n");
                         result = 1;
                     }else{
                         printf("Subprogram header lacks type\n");
@@ -471,7 +516,7 @@ int subProgHead(){
                     result = -1;
                 }
             }
-            if(result == 1){
+            if(result != -1){
                 result = match(SEMICOLON);
             }
         }else{
@@ -482,11 +527,12 @@ int subProgHead(){
         printf("Subprogram header lacks identifier\n");
         result = -1;
     }
+//    printf("Debug Log: exiting subProgHead with result %d\n", result);
     return result;
 }
 
 int subProgList(){
-    printf("Debug Log: in subProgList\n");
+//    printf("Debug Log: in subProgList\n");
     int result = 1;
     int test = subProgHead();
     while(test == 1){
@@ -496,14 +542,17 @@ int subProgList(){
                     test = subProgHead();
                 }else{
                     printf("Subprogram list lacks semicolon\n");
+                    test = -1;
                     result = -1;
                 }
             }else{
                 printf("Subprogram list lacks computation statement\n");
+                test = -1;
                 result = -1;
             }
         }else{
             printf("Subprogram list: error in variable declaration\n");
+            test = -1;
             result = -1;
         }
     }
@@ -511,11 +560,12 @@ int subProgList(){
         printf("Subprogram list: error in subprogram header\n");
         result = -1;
     }
+//    printf("Debug Log: exiting subProgList\n");
     return result;
 }
 
 int simpleType(){
-    printf("Debug Log: in simpleType\n");
+//    printf("Debug Log: in simpleType\n");
     if (match(INTEGER) == 1 || match(REAL) == 1 || match(BOOLEAN) == 1){
         return 1;
     }
@@ -525,7 +575,7 @@ int simpleType(){
 }
 
 int type(){
-    printf("Debug Log: in type\n");
+//    printf("Debug Log: in type\n");
     int tmp = simpleType();
     int result = 0;
     if(tmp == 1){
@@ -575,11 +625,12 @@ int type(){
         printf("Type: error in simple type\n");
         result = -1;
     }
+//    printf("Debug Log: exiting type\n");
     return result;
 }
 
 int identList(){
-    printf("Debug Log: in identList\n");
+//    printf("Debug Log: in identList\n");
     int result = 0;
     if(match(ID) == 1){
         while(match(COMA) == 1){
@@ -592,11 +643,12 @@ int identList(){
             result = 1;
         }
     }
+//    printf("Debug Log: exiting identList\n");
     return result;
 }
 
 int identListType(){
-    printf("Debug Log: in identListType\n");
+//    printf("Debug Log: in identListType\n");
     int result = 0;
     if(identList() == 1){
         if(match(COLON) == 1){
@@ -611,25 +663,41 @@ int identListType(){
             result = -1;
         }
     }
+//    printf("Debug Log: exiting identListType\n");
     return result;
 }
 
 int varDecList(){
-    printf("Debug Log: in varDecList\n");
+//    printf("Debug Log: in varDecList\n");
     int result = 0;
-    if(parList() == 1){
+    if(identListType() == 1){
         if(match(SEMICOLON) == 1){
-            result = 1;
+            int tmp = identListType();
+            while(tmp == 1){
+                if(match(SEMICOLON) == 1) {
+                    tmp = identListType();
+                }else{
+                    printf("Variable declaration list lacks semicolon\n");
+                    result = -1;
+                }
+            }
+            if (result == 0 && tmp == 0){
+                result = 1;
+            }else if(tmp == -1){
+                result = -1;
+                printf("Variable declaration list: error in following identifier list type\n");
+            }
         }else{
             printf("Variable declaration list lacks semicolon\n");
             result = -1;
         }
     }
+//    printf("Debug Log: exiting varDecList\n");
     return result;
 }
 
 int varDec(){
-    printf("Debug Log: in varDec\n");
+//    printf("Debug Log: in varDec\n");
     int result = 1;
     if(match(VAR) == 1){
         if(varDecList() == 1){
@@ -639,12 +707,13 @@ int varDec(){
             result = -1;
         }
     }
+//    printf("Debug Log: exiting varDec\n");
     return result;
 }
 
 int start(){
     token = yylex();
-    printf("Debug Log: in start\n");
+//    printf("Debug Log: in start\n");
     int result = -1;
     if(match(PROGRAM) == 1){
         if(match(ID) == 1){
