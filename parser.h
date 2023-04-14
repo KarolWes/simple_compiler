@@ -45,6 +45,8 @@ int factor();
 int relOp();
 int addOp();
 int mulOp();
+extern int yylex();
+extern int yylineno;
 
 int match(enum TokenType expected);
 

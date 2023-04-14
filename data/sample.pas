@@ -17,10 +17,9 @@ program minipas;
     else gcd := a
   end;
 
-
   { Calculate a factorial (a!) }
 
-  function factorial (a: integer) : integer;
+  function factorial (a: integer; 1) : integer;
   var k, fact: integer;
   begin
 

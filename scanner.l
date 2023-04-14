@@ -4,9 +4,11 @@
 #include <stdio.h>
 #include <string.h>
 #include "parser.h"
+
+int yylineno = 1;
 %}
 comment "{"[^"}"]*"}"
-whitespace  [ \t\n]
+whitespace  [ \t]
 digit [0-9]
 number "-"?{digit}+("."{digit}+)?(E("-")?{digit}+)?
 alpha [A-Za-z_]
@@ -17,6 +19,7 @@ alpha_digit {alpha}|{digit}
 
 {comment} {}
 {whitespace}+ {}
+"\n" {yylineno += 1;}
 
 {number} return NUM;
 
@@ -77,7 +80,7 @@ alpha_digit {alpha}|{digit}
 }
 
 . {
-	printf("\tError: Unrecognised character %s\n", yytext);
+	printf("\t<Line %d> Error: Unrecognised character %s\n", yylineno, yytext);
 	return -1;
 }
 
@@ -88,5 +91,15 @@ int main(int argc, char **argv) {
     if(res == 1){
         printf("Parsing complete with success\n");
     }
-    printf("%d", res);
+    else{
+        printf("Error occurred while parsing\n");
+    }
+
+//    int res = yylex();
+//    while (res != 0){
+//        printf("%d\n", res);
+//        res = yylex();
+//    }
+//    printf("%s", yytext);
+//    return 0;
 }
