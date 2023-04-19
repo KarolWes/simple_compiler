@@ -17,6 +17,9 @@ enum TokenType{
     LT, GT, LEQ, GEQ, ASSIGN,
     ID=101, NUM=100};
 
+extern int yylineno;
+enum TokenType token;
+
 int start();
 int varDec();
 int varDecList();
@@ -45,9 +48,10 @@ int factor();
 int relOp();
 int addOp();
 int mulOp();
-extern int yylex();
-extern int yylineno;
 
+extern int yylex();
+
+const char* translate(enum TokenType token);
 int match(enum TokenType expected);
 
 #endif //SIMPLE_COMPILER_PARSER_H

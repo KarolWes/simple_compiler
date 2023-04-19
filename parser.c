@@ -2,17 +2,70 @@
 #include <conio.h>
 #include "parser.h"
 
-enum TokenType token;
+
+
+const char* translate(enum TokenType token) {
+    switch(token) {
+        case AND: return "AND";
+        case ARRAY: return "ARRAY";
+        case BEG: return "BEGIN";
+        case DIV: return "DIV";
+        case DO: return "DO";
+        case ELSE: return "ELSE";
+        case END: return "END";
+        case FUNCTION: return "FUNCTION";
+        case IF: return "IF";
+        case MOD: return "MOD";
+        case NOT: return "NOT";
+        case OF: return "OF";
+        case OR: return "OR";
+        case PROCEDURE: return "PROCEDURE";
+        case PROGRAM: return "PROGRAM";
+        case THEN: return "THEN";
+        case TYPE: return "TYPE";
+        case VAR: return "VAR";
+        case WHILE: return "WHILE";
+        case INTEGER: return "INTEGER";
+        case REAL: return "REAL";
+        case BOOLEAN: return "BOOLEAN";
+        case TRUE: return "TRUE";
+        case FALSE: return "FALSE";
+        case BRAC_OPEN: return "[";
+        case BRAC_CLOSE: return "]";
+        case PARENTH_OPEN: return "(";
+        case PARENTH_CLOSE: return ")";
+        case COLON: return ":";
+        case SEMICOLON: return ";";
+        case COMA: return ",";
+        case DOT: return ".";
+        case RANGE: return "..";
+        case PLUS: return "+";
+        case MINUS: return "-";
+        case MULTI: return "*";
+        case DIV_SIGN: return "/";
+        case NEQ: return "<>";
+        case EQ: return "=";
+        case LT: return "<";
+        case GT: return ">";
+        case LEQ: return "<=";
+        case GEQ: return ">=";
+        case ASSIGN: return ":=";
+        case ID: return "IDENTIFIER";
+        case NUM: return "NUMBER";
+        default: return "UNKNOWN";
+    }
+}
 
 int match(enum TokenType expected){
     // matches token saved in memory with the expected one
-    // result is 1 if found, -1 if not
+    // result is 1 if found, 0 if not
     if(token == expected){
         token = yylex();
         return 1;
     }
     else{
-//        printf("Debug Log: Tokens doesn't match. Expected: %d, got %d\n", expected, token);
+        printf("Debug Log: Tokens doesn't match. Expected: %s, got %s\n",
+               translate(expected), translate(token));
         return 0;
     }
 }
