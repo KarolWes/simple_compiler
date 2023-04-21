@@ -4,18 +4,8 @@
 
 #ifndef SIMPLE_COMPILER_PARSER_H
 #define SIMPLE_COMPILER_PARSER_H
+#include "enumTypes.h"
 
-enum TokenType{
-    AND=1, ARRAY, BEG, DIV, DO,
-    ELSE, END, FUNCTION, IF, MOD,
-    NOT, OF, OR, PROCEDURE, PROGRAM,
-    THEN, TYPE, VAR, WHILE, INTEGER,
-    REAL, BOOLEAN, TRUE, FALSE, COMMENT,
-    BRAC_OPEN, BRAC_CLOSE, PARENTH_OPEN, PARENTH_CLOSE, COLON,
-    SEMICOLON, COMA, DOT, RANGE, PLUS,
-    MINUS, MULTI, DIV_SIGN, NEQ, EQ,
-    LT, GT, LEQ, GEQ, ASSIGN,
-    ID=101, NUM=100};
 
 extern int yylineno;
 enum TokenType token;
@@ -51,7 +41,6 @@ int mulOp();
 
 extern int yylex();
 
-const char* translate(enum TokenType token);
 int match(enum TokenType expected);
 
 #endif //SIMPLE_COMPILER_PARSER_H

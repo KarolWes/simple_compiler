@@ -1,0 +1,59 @@
+First sets:
+First(start) = {PROGRAM}
+First(varDec) = {VAR, ε} 
+First(varDecList) = {IDENT} 
+First(identListType) = {IDENT} 
+First(identList) = {IDENT} 
+First(type) = {INTEGER, REAL, BOOLEAN, ARRAY} 
+First(simpleType) = {INTEGER, REAL, BOOLEAN} 
+First(subProgList) = {FUNCTION, PROCEDURE, ε} 
+First(subProgHead) = {FUNCTION, PROCEDURE} 
+First(args) = {(, ε} 
+First(parList) = {IDENT} 
+First(compStmt) = {BEGIN} 
+First(stmtList) = {IDENT, IF, WHILE, BEGIN} 
+First(statement) = {IDENT, IF, WHILE, BEGIN} 
+First(procCallOrAssign) = {(, :=, [}
+First(params) = {(} 
+First(assignStmt) = {:=, [}
+First(index) = {[} 
+First(ifStmt) = {IF}
+First(whileStmt) = {WHILE} 
+First(exprList) = {NUM, FALSE, TRUE, IDENT, NOT, –, (}
+First(expr) = {NUM, FALSE, TRUE, IDENT, NOT, –, (} 
+First(simpleExpr) = {NUM, FALSE, TRUE, IDENT, NOT, –, (} 
+First(term) = {NUM, FALSE, TRUE, IDENT, NOT, –, (} 
+First(factor) = {NUM, FALSE, TRUE, IDENT, NOT, –, (}
+First(relop) = {<, <=, >, >=, <>, =}
+First(addop) = {+, -, OR}
+First(mulop) = {*, /, DIV, MOD, AND}
+
+Follow sets:
+Follow(start) = {$} 
+Follow(varDec) = {FUNCTION, PROCEDURE, BEGIN} 
+Follow(varDecList) = {FUNCTION, PROCEDURE, BEGIN}
+Follow(identListType) = {;, ), FUNCTION, PROCEDURE, BEG}
+Follow(identList) = {:}
+Follow(type) = {;, ) } 
+Follow(simpleType) = {;, ) } 
+Follow(subProgList) = {BEGIN} 
+Follow(subProgHead) = {VAR, BEGIN}
+Follow(args) = {:, ;} 
+Follow(parList) = {)} 
+Follow(compStmt) = {., ;, END, ELSE}
+Follow(stmtList) = {END} 
+Follow(statement) = {;, ELSE, END} 
+Follow(procCallOrAssign) = {;, ELSE, END}
+Follow(params) = {], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>, +, -, OR, *, /, DIV, MOD, AND}
+Follow(assignStmt) = {;, ELSE, END} 
+Follow(index) = {:=, ], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>, +, -, OR, *, /, DIV, MOD, AND}
+Follow(ifStmt) = {;, ELSE, END}
+Follow(whileStmt) = {;, END, ELSE}
+Follow(exprList) = {)} 
+Follow(expr) = {], ..,  THEN, DO, ',', ), ;, END, ELSE} 
+Follow(simpleExpr) = {], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>}
+Follow(term) = {], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>, +, -, OR}
+Follow(factor) = {], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>, +, -, OR, *, /, DIV, MOD, AND}
+Follow(relop) ={], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>}
+Follow(mulop) ={], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>, +, -, OR}
+Follow(addop) ={], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>, +, -, OR, *, /, DIV, MOD, AND}

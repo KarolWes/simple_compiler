@@ -3,6 +3,7 @@ program minipas;
   var a: integer;
       b, i: integer;
       x: array [1..100] of real;
+      1 2 3
   { Calculate greatest common divisor of a and b }
   function gcd (a, b: integer) : integer;
   begin
@@ -19,7 +20,7 @@ program minipas;
 
   { Calculate a factorial (a!) }
 
-  function factorial (a: integer; 1) : integer;
+  function factorial (a: integer) : integer;
   var k, fact: integer;
   begin
 

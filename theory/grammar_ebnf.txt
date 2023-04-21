@@ -19,7 +19,7 @@ index → \[ expr [.. expr] \]
 ifStmt → IF expr THEN statement [ELSE statement]
 whileStmt → WHILE expr DO statement
 exprList → expr {, expr}
-expr → simpleExpr {relOp simpleExpr}
+expr → simpleExpr [relOp simpleExpr]
 simpleExpr → term {addOp term}
 term → factor {mulOp factor}
 factor → NUM | FALSE | TRUE | IDENT [index | params] | NOT factor | – factor | ( expr )

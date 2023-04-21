@@ -5,7 +5,11 @@
 #include <string.h>
 #include "parser.h"
 
+#include "enumTypes.h"
+#include "ffsets.h"
+
 int yylineno = 1;
+extern int in_set(enum TokenType t, enum Nonterminal n, int include_first, int include_follow, int include_eof);
 %}
 comment "{"[^"}"]*"}"
 whitespace  [ \t]
@@ -87,6 +91,7 @@ alpha_digit {alpha}|{digit}
 %%
 
 int main(int argc, char **argv) {
+
     int res = start();
     if(res == 1){
         printf("Parsing complete with success\n");
