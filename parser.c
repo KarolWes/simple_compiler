@@ -774,7 +774,7 @@ int identList(){
 int identListType(){
 //    printf("Debug Log: in identListType\n");
     int result = 0;
-    checkInput(IdentListType, 1, 0);
+    // checkInput(IdentListType, 1, 0);
     if(in_set(token, IdentListType, 1, 0, 0) == 1){
         if(identList() == 1){
             if(match(COLON) == 1){

@@ -45,7 +45,7 @@ int follow[][30] = {
         {DOLLAR},
         {FUNCTION, PROCEDURE, BEG},
         {FUNCTION, PROCEDURE, BEG},
-        {SEMICOLON, PARENTH_CLOSE, FUNCTION, PROCEDURE, BEG},
+        {SEMICOLON, PARENTH_CLOSE},
         {COLON},
         {SEMICOLON, PARENTH_CLOSE},
         {SEMICOLON, PARENTH_CLOSE},
@@ -72,7 +72,7 @@ int follow[][30] = {
         {NUM, FALSE, TRUE, ID, NOT, MINUS, PARENTH_OPEN}
 };
 
-int follow_size[] ={1, 3,3,5,1,2,2,1,2,2,
+int follow_size[] ={1, 3,3,2,1,2,2,1,2,2,
                     1,4,1,3,3,23, 3,24, 3,3,
                     1,9, 23, 23, 23, 7,7,7};
 

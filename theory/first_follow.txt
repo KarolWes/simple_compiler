@@ -32,7 +32,7 @@ Follow sets:
 Follow(start) = {$} 
 Follow(varDec) = {FUNCTION, PROCEDURE, BEGIN} 
 Follow(varDecList) = {FUNCTION, PROCEDURE, BEGIN}
-Follow(identListType) = {;, ), FUNCTION, PROCEDURE, BEG}
+Follow(identListType) = {;, )}
 Follow(identList) = {:}
 Follow(type) = {;, ) } 
 Follow(simpleType) = {;, ) } 

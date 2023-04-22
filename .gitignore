@@ -1,8 +1,7 @@
 # Project exclude paths
 /cmake-build-debug/
 /.idea/
-*.out
-*.o
+/bin
 *.yy.c
 *.zip
 *.pdf
