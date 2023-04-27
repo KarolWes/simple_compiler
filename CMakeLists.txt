@@ -9,7 +9,7 @@ FIND_PACKAGE(FLEX)
 
 BISON_TARGET(
         Parser # Just a name
-        parser.y ${CMAKE_CURRENT_BINARY_DIR}/parser.tab.cpp # path to save output
+        example.y ${CMAKE_CURRENT_BINARY_DIR}/parser.tab.cpp # path to save output
 )
 
 FLEX_TARGET(
@@ -23,4 +23,4 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 
 ADD_EXECUTABLE(main ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
-        main.cpp lexer.cpp scanner.l parser.c ffsets.c ffsets.h enumTypes.h enumTypes.c)
+        main.cpp lexer.cpp scanner.l parser.c ffsets.c ffsets.h enumTypes.h enumTypes.c example.l)

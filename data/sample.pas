@@ -3,17 +3,12 @@ program minipas;
   var a: integer;
       b, i: integer;
       x: array [1..100] of real;
-      1 2 3
-      while true then
-      begin
-        a:=a+b
-      end.
   { Calculate greatest common divisor of a and b }
   function gcd (a, b: integer) : integer;
   begin
   while a*b <> 0 do
     begin
-      if a > b then
+      if a > 0 then
         a := a-b
       else b := b-a
     end;

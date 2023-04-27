@@ -54,6 +54,6 @@ Follow(expr) = {], ..,  THEN, DO, ',', ), ;, END, ELSE}
 Follow(simpleExpr) = {], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>}
 Follow(term) = {], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>, +, -, OR}
 Follow(factor) = {], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>, +, -, OR, *, /, DIV, MOD, AND}
-Follow(relop) ={], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>}
-Follow(mulop) ={], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>, +, -, OR}
-Follow(addop) ={], ..,  THEN, DO, ',', ), ;, END, ELSE, <, <=, >, >=, =, <>, +, -, OR, *, /, DIV, MOD, AND}
+Follow(relop) ={NUM, FALSE, TRUE, IDENT, NOT, –, (}
+Follow(mulop) ={NUM, FALSE, TRUE, IDENT, NOT, –, (}
+Follow(addop) ={NUM, FALSE, TRUE, IDENT, NOT, –, (}
