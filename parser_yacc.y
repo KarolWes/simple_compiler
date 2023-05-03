@@ -1,5 +1,9 @@
 %{
 #include <stdio.h>
+
+int yyerror(char *s);
+extern int yylex();
+extern int yylineno;
 %}
 
 %token  AND ARRAY BEG DIV DO
@@ -118,4 +122,7 @@ mulOp		: MULTI
 %%
 
 int main() { return yyparse(); }
-int yyerror(char *s) { fprintf(stderr, "%s\n", s); return 0; }
+int yyerror(char *s) {
+	fprintf(stderr, "%s\n", s);
+	printf("error in line %d\n", yylineno);
+	return 0; }

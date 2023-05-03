@@ -113,4 +113,3 @@ begin
   end;
   bubble_sort(x, b)
 end.
-???

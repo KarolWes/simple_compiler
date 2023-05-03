@@ -1,8 +1,7 @@
-%
-option noyywrap
+%option noyywrap
 
 %{
-#include "example.tab.h."
+#include "parser_yacc.tab.h."
 
 int yylineno = 1;
 %}
