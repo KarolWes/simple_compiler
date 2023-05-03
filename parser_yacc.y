@@ -6,16 +6,41 @@ extern int yylex();
 extern int yylineno;
 %}
 
+%union {
+	int number;
+	char *string;
+	struct tENTRY *entry;
+	struct tN_PROG *prog;
+	struct tN_STMT *stmt;
+	struct tN_CALL *call_stmt;
+	struct tN_ASSIGN *assign_stmt;
+	struct tN_IF *if_stmt;
+	struct tN_WHILE *while_stmt;
+	struct tN_EXPR *expr;
+}
+
 %token  AND ARRAY BEG DIV DO
             ELSE END FUNCTION IF MOD
             NOT OF OR PROCEDURE PROGRAM
-            THEN TYPE VAR WHILE INTEGER
+            THEN VAR WHILE INTEGER
             REAL BOOLEAN TRUE FALSE COMMENT
             BRAC_OPEN BRAC_CLOSE PARENTH_OPEN PARENTH_CLOSE COLON
             SEMICOLON COMA DOT RANGE PLUS
             MINUS MULTI DIV_SIGN NEQ EQ
             LT GT LEQ GEQ ASSIGN
-            ID NUM
+%token <string> ID NUM
+
+%type <entry> identListType identList type subProgHead
+%type <prog> subProgList
+%type <stmt> compStmt stmtList stmt elsePart
+%type <call_stmt> procCall
+%type <assign_stmt> assignStmt
+%type <if_stmt> ifStmt
+%type <while_stmt> whileStmt
+%type <expr> params exprList expr index simpleExpr term factor
+%type <number> simpleType relOp addOp mulOp
+%type <string> varDecList varDec
+
 %start  start
 
 %%

@@ -9,12 +9,12 @@ FIND_PACKAGE(FLEX)
 
 BISON_TARGET(
         Parser # Just a name
-        example.y ${CMAKE_CURRENT_BINARY_DIR}/parser.tab.cpp # path to save output
+        lesson_examples/example.y ${CMAKE_CURRENT_BINARY_DIR}/parser.tab.cpp # path to save output
 )
 
 FLEX_TARGET(
         Lexer
-        count.l ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp
+        lesson_examples/count.l ${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp
 )
 
 ADD_FLEX_BISON_DEPENDENCY(Lexer Parser)
@@ -23,4 +23,4 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 
 ADD_EXECUTABLE(main ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
-        main.cpp lexer.cpp scanner.l parser.c ffsets.c ffsets.h enumTypes.h enumTypes.c example.l scanner_yacc.l)
+        main.cpp lexer.cpp handwritten_parser/scanner.l handwritten_parser/parser.c handwritten_parser/ffsets.c handwritten_parser/ffsets.h handwritten_parser/enumTypes.h handwritten_parser/enumTypes.c lesson_examples/example.l scanner_yacc.l ast.h)
