@@ -17,10 +17,10 @@ typedef struct tN_VAR_REF {
 
 typedef struct tN_EXPR {
     enum { CONSTANT=0, VAR_REF, OP, FUNC_CALL } typ;
-    union {
+    union uEXPR{
         char *constant; /* string value of the constant */
         N_VAR_REF *var_ref; /* reference to a variable */
-        struct {
+        struct sOP{
             struct tN_EXPR *expr; /* one or two operands; must not be null! */
             enum { NO_OP=0, EQ_OP, NEQ_OP, GT_OP, GEQ_OP, LT_OP, LEQ_OP, PLUS_OP, MINUS_OP, MULTI_OP, SLASH_OP, DIV_OP, MOD_OP, AND_OP, OR_OP, NOT_OP } op; /* operator */
         } operation;
@@ -66,7 +66,7 @@ typedef struct tN_CALL {
 
 typedef struct tN_STMT {
     enum { _ASSIGN=0, _IF, _WHILE, _PROC_CALL } typ;
-    union {
+    union uSTMT{
         N_ASSIGN *assign_stmt;
         N_IF *if_stmt;
         N_WHILE *while_stmt;

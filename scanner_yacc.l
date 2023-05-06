@@ -1,7 +1,7 @@
 %option noyywrap
 
 %{
-#include "parser_yacc.tab.h."
+#include "parser_yacc.tab.h"
 
 int yylineno = 1;
 %}
@@ -19,7 +19,10 @@ alpha_digit {alpha}|{digit}
 {whitespace}+ {}
 "\n" {yylineno += 1;}
 
-{number} return NUM;
+{number} {
+    yylval.string = yytext;
+    return NUM;
+}
 
 
 "." return DOT;
@@ -74,6 +77,7 @@ alpha_digit {alpha}|{digit}
 
 {alpha}{alpha_digit}* {
 // printf("\t%s\n", yytext);
+yylval.string = strdup(yytext);
 return ID;
 }
 
