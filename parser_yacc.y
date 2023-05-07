@@ -1,5 +1,6 @@
 %{
 #include <stdio.h>
+#include <stdlib.h>
 #inlcude <ast.h>
 
 int yyerror(char *s);
@@ -8,8 +9,8 @@ extern int yylineno;
 %}
 
 %union {
-	int number;
-	float number;
+	int number_i;
+	float number_f;
 	char *string;
 	struct tENTRY *entry;
 	struct tN_PROG *prog;
@@ -40,37 +41,64 @@ extern int yylineno;
 %type <if_stmt> ifStmt
 %type <while_stmt> whileStmt
 %type <expr> params exprList expr index simpleExpr term factor
-%type <number> simpleType relOp addOp mulOp
+%type <number_i> simpleType relOp addOp mulOp
 %type <string> varDecList varDec
 
 %start  start
 
 %%
-start		: PROGRAM ID SEMICOLON varDec subProgList compStmt DOT
+start		: PROGRAM ID SEMICOLON varDec subProgList compStmt DOT	{
+                                                                            ast = (N_PROG*) malloc(sizeof (N_PROG));
+                                                                            ast->stmt = $6;
+                                                                            ast->next = nullptr;
+                                                                        }
 		;
-varDec		:
-		| VAR varDecList
+varDec		:			{$$ = nullptr;}
+		| VAR varDecList	{$$ = $2;}
 		;
-varDecList	: varDecList identListType SEMICOLON
-		| identListType SEMICOLON
+varDecList	: identListType SEMICOLON varDecList	{
+                                                        	$1->next = $3;
+                                                        	$$ = $1;
+                                                      	}
+		| identListType SEMICOLON		{$$=$1;}
 		;
 identListType	: identList COLON type
 		;
 identList	: identList COMA ID
-		| ID
+		| ID			{
+                                            N_VAR_REF* var = (N_VAR_REF*) malloc(sizeof( N_VAR_REF));
+                                            var->id = $1;
+                                            var->index = nullptr;
+                                            $$ = var;
+                                        }
 		;
-type		: simpleType
-		| ARRAY BRAC_OPEN NUM RANGE NUM BRAC_CLOSE OF simpleType
+type		: simpleType	{$$ = nullptr;}
+		| ARRAY BRAC_OPEN NUM RANGE NUM BRAC_CLOSE OF simpleType	{
+                                                                                    N_EXPR* r_left = (N_EXPR*) malloc(sizeof (N_EXPR));
+                                                                                    r_left->typ = tN_EXPR::CONSTANT;
+                                                                                    r_left->description = $3;
+                                                                                    N_EXPR* r_right = (N_EXPR*) malloc(sizeof (N_EXPR));
+                                                                                    r_right->typ = tN_EXPR::CONSTANT;
+                                                                                    r_right->description = $5;
+                                                                                    r_right->next = nullptr;
+                                                                                    r_left->next = r_right;
+                                                                                    $$ = r_left;
+                                                                                }
 		;
 simpleType	: INTEGER	{$$ = 'i';}
 		| REAL		{$$ = 'f';}
 		| BOOLEAN	{$$ = 'b';}
 		;
 subProgList	:
-		| subProgList subProgHead varDec compStmt SEMICOLON
+		|  subProgHead varDec compStmt SEMICOLON subProgList {
+                                                                         N_PROG* prog = (N_PROG*) malloc(sizeof (N_PROG));
+                                                                         prog->stmt = $3;
+                                                                         prog->next = $5;
+                                                                         $$ = prog;
+                                                                     }
 		;
-subProgHead	: FUNCTION ID args COLON type SEMICOLON
-		| PROCEDURE ID args SEMICOLON
+subProgHead	: FUNCTION ID args COLON type SEMICOLON		{$$ = nullptr;}
+		| PROCEDURE ID args SEMICOLON			{$$ = nullptr;}
 		;
 args		:
 		| PARENTH_OPEN parList PARENTH_CLOSE
@@ -81,11 +109,8 @@ parList		: parList SEMICOLON identListType
 compStmt	: BEG stmtList END { $$ = $2; }
 		;
 stmtList	: stmt SEMICOLON stmtList	{
-                                                    N_STMT* stmt = (N_STMT*) malloc(sizeof (N_STMT));
-                                                    stmt->typ = $1->typ;
-                                                    stmt->node = $1->node;
-                                                    stmt->next = $3;
-                                                    $$ = stmt;
+                                                    $1->next = $3;
+                                                    $$ = $1;
                                                 }
 		| stmt				{$$ = $1;}
 		;
@@ -144,20 +169,22 @@ assignStmt	: ID ASSIGN expr		{
                                                     $$ = assign;
                                                 }
 		;
-index		: BRAC_OPEN expr BRAC_CLOSE		{
-							tN_EXPR* e = (tN_EXPR*)malloc(tN_EXPR);
-
-
-							}
-		| BRAC_OPEN expr RANGE expr BRAC_CLOSE
+index		: BRAC_OPEN expr BRAC_CLOSE		{$$ = $2;}
+		| BRAC_OPEN expr RANGE expr BRAC_CLOSE	{
+                                                            $2->next = $4;
+                                                            $$ = $2;
+                                                        }
 		;
-ifStmt		: IF expr THEN stmt elsePart
+ifStmt		: IF expr THEN stmt elsePart	{
+                                                    N_IF *i = (N_IF*) malloc(sizeof (N_IF));
+                                                    i->expr = $2;
+                                                    i->then_part = $4;
+                                                    i->else_part = $5;
+                                                    $$ = i;
+                                                }
 		;
-elsePart	:
-		|  ELSE stmt		{
-					tN_STMT* e = (tN_STMT *) malloc(sizeof(tN_STMT));
-
-					}
+elsePart	:			{$$ = nullptr;}
+		|  ELSE stmt		{$$ = $2;}
 		;
 whileStmt	: WHILE expr DO stmt	{
 					    tN_WHILE* w = (tN_WHILE *) malloc(sizeof(tN_WHILE));
@@ -166,10 +193,28 @@ whileStmt	: WHILE expr DO stmt	{
                                             $$ = w;
 					}
 		;
-exprList	: expr COMA exprList
+exprList	: expr COMA exprList	{
+                                            $1->next = $3;
+                                            $$ = $1
+                                        }
 		| expr			{$$ = $1;}
 		;
-expr		: simpleExpr relOp simpleExpr
+expr		: simpleExpr relOp simpleExpr	{
+                                                    N_EXPR * expr = (N_EXPR*) malloc(sizeof(N_EXPR));
+                                                    expr->typ = tN_EXPR::OP;
+                                                    expr->description.operation.expr = $1;
+                                                    switch($2){
+                                                        case '=': expr->description.operation.op = tN_EXPR::uEXPR::sOP::EQ_OP; break;
+                                                        case '!': expr->description.operation.op = tN_EXPR::uEXPR::sOP::NEQ_OP; break;
+                                                        case '<': expr->description.operation.op = tN_EXPR::uEXPR::sOP::LT_OP; break;
+                                                        case '>': expr->description.operation.op = tN_EXPR::uEXPR::sOP::GT_OP; break;
+                                                        case '{': expr->description.operation.op = tN_EXPR::uEXPR::sOP::LEQ_OP; break;
+                                                        case '}': expr->description.operation.op = tN_EXPR::uEXPR::sOP::GEQ_OP; break;
+                                                    }
+                                                    $1->next = $3;
+                                                    expr->next = nullptr;
+                                                    $$ = expr;
+                                                }
 		| simpleExpr			{$$ = $1;}
 		;
 simpleExpr	: term addOp simpleExpr{
@@ -182,6 +227,7 @@ simpleExpr	: term addOp simpleExpr{
                                                case '|': expr->description.operation.op = tN_EXPR::uEXPR::sOP::OR_OP; break;
                                            }
                                            $1->next = $3;
+                                           expr->next = nullptr;
                                            $$ = expr;
                                        }
 		| term			{$$ = $1;}
@@ -198,6 +244,7 @@ term		: factor mulOp term	{
                                                 case '&':   expr->description.operation.op = tN_EXPR::uEXPR::sOP::AND_OP; break;
                                             }
                                             $1->next = $3;
+                                            expr->next = nullptr;
                                             $$ = expr;
                                         }
 		| factor		{$$ = $1;}
@@ -206,18 +253,21 @@ factor		: NUM			{
                                             N_EXPR * expr = (N_EXPR*) malloc(sizeof(N_EXPR));
                                             expr->typ = tN_EXPR::CONSTANT;
                                             expr->description = $1;
+                                            expr->next = nullptr;
                                             $$ = expr;
                                         }
 		| FALSE			{
                                             N_EXPR * expr = (N_EXPR*) malloc(sizeof(N_EXPR));
                                             expr->typ = tN_EXPR::CONSTANT;
                                             expr->description.constant = "FALSE";
+                                            expr->next = nullptr;
                                             $$ = expr;
                                         }
 		| TRUE			{
                                             N_EXPR * expr = (N_EXPR*) malloc(sizeof(N_EXPR));
                                             expr->typ = tN_EXPR::CONSTANT;
                                             expr->description.constant = "TRUE";
+                                            expr->next = nullptr;
                                             $$ = expr;
                                         }
 		| ID			{
@@ -227,6 +277,7 @@ factor		: NUM			{
                                             var->index = nullptr;
                                             expr->typ = tN_EXPR::VAR_REF;
                                             expr->description.var_ref = var;
+                                            expr->next = nullptr;
                                             $$ = expr;
                                         }
 		| ID index		{
@@ -236,6 +287,7 @@ factor		: NUM			{
                                             var->index = $2;
                                             expr->typ = tN_EXPR::VAR_REF;
                                             expr->description.var_ref = var;
+                                            expr->next = nullptr;
                                             $$ = expr;
                                         }
 		| ID params		{
@@ -245,6 +297,7 @@ factor		: NUM			{
                                             call->par_list = $2;
                                             expr->typ = tN_EXPR::FUNC_CALL;
                                             expr->description.func_call = call;
+                                            expr->next = nullptr;
                                             $$ = expr;
                                         }
 		| NOT factor		{
@@ -252,6 +305,7 @@ factor		: NUM			{
                                             expr->typ = tN_EXPR::OP;
                                             expr->description.operation.op = tN_EXPR::uEXPR::sOP::NOT_OP;
                                             expr->description.operation.expr = $2;
+                                            expr->next = nullptr;
                                             $$ = expr;
                                         }
 		| MINUS factor		{
@@ -259,6 +313,7 @@ factor		: NUM			{
                                             N_EXPR * second = (N_EXPR*) malloc(sizeof(N_EXPR));
                                             second->typ = tN_EXPR::CONSTANT;
                                             second->description.constant = "-1.0";
+                                            second->next = nullptr;
                                             expr->typ = tN_EXPR::OP;
                                             expr->description.operation.op = tN_EXPR::uEXPR::sOP::NOT_OP;
                                             expr->description.operation.expr = $2;
