@@ -53,7 +53,6 @@ alpha_digit {alpha}|{digit}
 "var" return VAR;
 "array" return ARRAY;
 "of" return OF;
-"type" return TYPE;
 "integer" return INTEGER;
 "boolean" return BOOLEAN;
 "real" return REAL;
