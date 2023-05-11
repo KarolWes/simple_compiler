@@ -23,4 +23,4 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 
 ADD_EXECUTABLE(main ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
-        main.cpp lexer.cpp handwritten_parser/scanner.l handwritten_parser/parser.c handwritten_parser/ffsets.c handwritten_parser/ffsets.h handwritten_parser/enumTypes.h handwritten_parser/enumTypes.c lesson_examples/example.l scanner_yacc.l ast.h)
+        main.cpp lexer.cpp handwritten_parser/scanner.l handwritten_parser/parser.c handwritten_parser/ffsets.c handwritten_parser/ffsets.h handwritten_parser/enumTypes.h handwritten_parser/enumTypes.c lesson_examples/example.l scanner_yacc.l ast.h printout.cpp printout.h)

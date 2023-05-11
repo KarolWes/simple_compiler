@@ -3,7 +3,7 @@
 
 typedef enum { _FALSE=0, _TRUE } _BOOLEAN;
 typedef enum { _BOOL=0, _INT, _REAL, _VOID } _DATA_TYPE;
-
+typedef enum { NO_OP=0, EQ_OP, NEQ_OP, GT_OP, GEQ_OP, LT_OP, LEQ_OP, PLUS_OP, MINUS_OP, MULTI_OP, SLASH_OP, DIV_OP, MOD_OP, AND_OP, OR_OP, NOT_OP } _OPERATOR;
 
 /* 0. Entry */
 
@@ -47,7 +47,7 @@ typedef struct tN_EXPR {
         N_VAR_REF *var_ref; /* reference to a variable */
         struct tExprOp{
             struct tN_EXPR *expr; /* one or two operands; must not be null! */
-            enum { NO_OP=0, EQ_OP, NEQ_OP, GT_OP, GEQ_OP, LT_OP, LEQ_OP, PLUS_OP, MINUS_OP, MULTI_OP, SLASH_OP, DIV_OP, MOD_OP, AND_OP, OR_OP, NOT_OP } op; /* operator */
+            _OPERATOR op; /* operator */
         } operation;
         struct tN_CALL *func_call; /* function call */
     } description;
