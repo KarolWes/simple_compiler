@@ -2,23 +2,14 @@
 #include <stdlib.h>
 #include "ast.h"
 
-// PROGRAM ID SEMICOLON varDec subProgList compStmt DOT
+// identListType SEMICOLON parList
 int main() {
-            N_STMT * stmt = malloc(sizeof(struct tN_STMT));
-            stmt->typ = _PROC_CALL;
-            stmt->node.proc_call = $1;
-            $$ = stmt;
-            N_STMT * stmt = malloc(sizeof(struct tN_STMT));
-            stmt->typ = _ASSIGN;
-            stmt->node.assign_stmt = $1;
-            $$ = stmt;
-            N_STMT * stmt = malloc(sizeof(struct tN_STMT));
-            stmt->typ = _IF;
-            stmt->node.if_stmt = $1;
-            $$ = stmt;
-            N_STMT * stmt = malloc(sizeof(struct tN_STMT));
-            stmt->typ = _WHILE;
-            stmt->node.while_stmt = $1;
-            $$ = stmt;
-    };
+    ast = (N_PROG*) malloc(sizeof (struct tN_PROG));
+    ENTRY * entry = (ENTRY*) malloc(sizeof (struct tENTRY));
+    entry->typ = _PROG;
+    entry->dataType = _VOID;
+    entry->base.id = $2;
+    entry->next= $4;
+    ast->stmt = $6;
+    ast->next = $5;
 }

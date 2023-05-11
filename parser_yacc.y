@@ -49,48 +49,126 @@ extern int yylineno;
 %%
 start		: PROGRAM ID SEMICOLON varDec subProgList compStmt DOT	{
                                                                             ast = (N_PROG*) malloc(sizeof (struct tN_PROG));
+                                                                            ENTRY * entry = (ENTRY*) malloc(sizeof (struct tENTRY));
+                                                                            entry->typ = _PROG;
+                                                                            entry->dataType = _VOID;
+                                                                            entry->base.id = $2;
+                                                                            entry->next= $4;
                                                                             ast->stmt = $6;
-                                                                            ast->next = NULL;
+                                                                            ast->next = $5;
                                                                         }
 		;
-varDec		:
-		| VAR varDecList
+varDec		:			{ $$ = NULL; }
+		| VAR varDecList	{ $$ = $2; }
 		;
-varDecList	: identListType SEMICOLON varDecList
-		| identListType SEMICOLON
+varDecList	: identListType SEMICOLON varDecList	{
+                                                            ENTRY * n = $1 -> next;
+                                                            if(n == NULL){
+                                                                $1->next = $3;
+                                                            }
+                                                            else{
+                                                                while(n->next != NULL){
+                                                                    n = (ENTRY *)(n->next);
+                                                                }
+                                                                n->next = $3;
+                                                            }
+                                                            $$ = $1;
+                                                        }
+		| identListType SEMICOLON		{ $$ = $1; }
 		;
-identListType	: identList COLON type {}
+identListType	: identList COLON type {
+                                           ENTRY *idListType = (ENTRY *)(malloc(sizeof(struct tENTRY)));
+                                           ENTRY *returnVal = idListType;
+                                           while(idListType == NULL){
+                                               idListType->typ = $3->typ;
+                                               idListType->dataType = $3->dataType;
+                                               if(idListType->typ == _ARRAY){
+                                                   idListType->ext.bounds.low = $3->ext.bounds.low;
+                                                   idListType->ext.bounds.high = $3->ext.bounds.high;
+                                               }
+                                               idListType = (ENTRY *)(idListType->next);
+                                           }
+                                           $$ = returnVal;
+                                       }
 		;
 identList	: ID COMA identList	{
-//			$$ = malloc(sizeof (struct tEntry));
-//			$$->base.id = $1;
-//			$$->next = $3;
-}
-		| ID
+					ENTRY *idList = (ENTRY *)(malloc(sizeof(struct tENTRY)));
+					idList->base.id = $1;
+					idList->next = $3;
+					$$ = idList;
+					}
+		| ID			{
+					ENTRY *idList = (ENTRY *)(malloc(sizeof(struct tENTRY)));
+					idList->base.id = $1;
+					idList->next = NULL;
+					$$ = idList;
+					}
 		;
-type		: simpleType
-		| ARRAY BRAC_OPEN NUM RANGE NUM BRAC_CLOSE OF simpleType
+type		: simpleType							{
+                                                                                    ENTRY *type = (ENTRY *)(malloc(sizeof(struct tENTRY)));
+                                                                                    type->typ = _VAR;
+                                                                                    type->dataType = $1;
+                                                                                    type->next = NULL;
+                                                                                    $$ = type
+                                                                                }
+		| ARRAY BRAC_OPEN NUM RANGE NUM BRAC_CLOSE OF simpleType	{
+                                                                                    ENTRY *type = (ENTRY *)(malloc(sizeof(struct tENTRY)));
+                                                                                    type->typ = _ARRAY;
+                                                                                    type->dataType = $8;
+                                                                                    type->ext.bounds.low = atoi($3);
+                                                                                    type->ext.bounds.high = atoi($5);
+                                                                                    type->next = NULL;
+                                                                                    $$ = type;
+                                                                                }
 		;
-simpleType	: INTEGER	{$$ = 'i';}
-		| REAL		{$$ = 'f';}
-		| BOOLEAN	{$$ = 'b';}
+simpleType	: INTEGER	{$$ = _INT;}
+		| REAL		{$$ = _REAL;}
+		| BOOLEAN	{$$ = _BOOL;}
 		;
-subProgList	:
+subProgList	:	{$$ = NULL; }
 		|  subProgHead varDec compStmt SEMICOLON subProgList {
-                                                                         N_PROG* prog = malloc(sizeof (struct tN_PROG));
+                                                                         N_PROG* prog = (N_PROG *)(malloc(sizeof(struct tN_PROG)));
+                                                                         prog->entry = $1;
+                                                                         prog->entry->next = $2;
                                                                          prog->stmt = $3;
                                                                          prog->next = $5;
                                                                          $$ = prog;
                                                                      }
 		;
-subProgHead	: FUNCTION ID args COLON type SEMICOLON		{$$ = NULL;}
-		| PROCEDURE ID args SEMICOLON			{$$ = NULL;}
+subProgHead	: FUNCTION ID args COLON simpleType SEMICOLON		{
+                                                                            ENTRY * func = (ENTRY*) malloc(sizeof (struct tENTRY));
+                                                                            func->typ = _CALL;
+                                                                            func->dataType = $5;
+                                                                            func->base.id = $2;
+                                                                            func->ext.prog.parList = $3;
+                                                                            func->next = NULL;
+                                                                        }
+		| PROCEDURE ID args SEMICOLON			{
+                                                                    ENTRY * func = (ENTRY*) malloc(sizeof (struct tENTRY));
+                                                                    func->typ = _CALL;
+                                                                    func->dataType = _VOID;
+                                                                    func->base.id = $2;
+                                                                    func->ext.prog.parList = $3;
+                                                                    func->next = NULL;
+                                                                }
 		;
-args		:
-		| PARENTH_OPEN parList PARENTH_CLOSE
+args		:	{ $$ = NULL};
+		| PARENTH_OPEN parList PARENTH_CLOSE	{ $$ = $2; }
 		;
-parList		: parList SEMICOLON identListType
-		| identListType
+parList		: identListType SEMICOLON parList	{
+							    ENTRY * n = $1 -> next;
+							    if(n == NULL){
+								$1->next = $3;
+							    }
+							    else{
+								while(n->next != NULL){
+								    n = (ENTRY *)(n->next);
+								}
+								n->next = $3;
+							    }
+							    $$ = $1;
+							}
+		| identListType				{ $$ = $1; }
 		;
 compStmt	: BEG stmtList END { $$ = $2; }
 		;
@@ -196,8 +274,7 @@ expr		: simpleExpr relOp simpleExpr	{
                                                         case '{': expr->description.operation.op = LEQ_OP; break;
                                                         case '}': expr->description.operation.op = GEQ_OP; break;
                                                     }
-                                                    $1->next = $3;
-                                                    expr->next = NULL;
+                                                    expr->next = $3;
                                                     $$ = expr;
                                                 }
 		| simpleExpr			{$$ = $1;}
@@ -211,8 +288,7 @@ simpleExpr	: term addOp simpleExpr{
                                                case '-': expr->description.operation.op = MINUS_OP; break;
                                                case '|': expr->description.operation.op = OR_OP; break;
                                            }
-                                           $1->next = $3;
-                                           expr->next = NULL;
+                                           expr->next = $3;
                                            $$ = expr;
                                        }
 		| term			{$$ = $1;}
@@ -228,8 +304,7 @@ term		: factor mulOp term	{
                                                 case '%':   expr->description.operation.op = MOD_OP; break;
                                                 case '&':   expr->description.operation.op = AND_OP; break;
                                             }
-                                            $1->next = $3;
-                                            expr->next = NULL;
+                                            expr->next = $3;
                                             $$ = expr;
                                         }
 		| factor		{$$ = $1;}
@@ -291,18 +366,6 @@ factor		: NUM			{
                                             expr->description.operation.op = NOT_OP;
                                             expr->description.operation.expr = $2;
                                             expr->next = NULL;
-                                            $$ = expr;
-                                        }
-		| MINUS factor		{
-                                            N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
-                                            N_EXPR * second = malloc(sizeof(struct tN_EXPR));
-                                            second->typ = CONSTANT;
-                                            second->description.constant = "-1.0";
-                                            second->next = NULL;
-                                            expr->typ = OP;
-                                            expr->description.operation.op = NOT_OP;
-                                            expr->description.operation.expr = $2;
-                                            expr->description.operation.expr->next = second;
                                             $$ = expr;
                                         }
 		| PARENTH_OPEN expr PARENTH_CLOSE {$$ = $2;}
