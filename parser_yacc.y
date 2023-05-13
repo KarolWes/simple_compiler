@@ -1,11 +1,11 @@
 %{
 #include <stdio.h>
-#include <stdlib.h>
 #include "ast.h"
 
-int yyerror(char *s);
-extern int yylex();
+void yyerror(char *s);
+int yylex();
 extern int yylineno;
+N_PROG *ast;
 
 %}
 
@@ -51,8 +51,9 @@ start		: PROGRAM ID SEMICOLON varDec subProgList compStmt DOT	{
                                                                             ast = (N_PROG*) malloc(sizeof (struct tN_PROG));
                                                                             ENTRY * entry = (ENTRY*) malloc(sizeof (struct tENTRY));
                                                                             entry->typ = _PROG;
-                                                                            entry->dataType = _VOID;
+                                                                            entry->dataType = _MAIN;
                                                                             entry->base.id = $2;
+                                                                            entry->ext.prog.parList = NULL;
                                                                             entry->next= $4;
                                                                             ast->stmt = $6;
                                                                             ast->next = $5;
@@ -109,7 +110,7 @@ type		: simpleType							{
                                                                                     type->typ = _VAR;
                                                                                     type->dataType = $1;
                                                                                     type->next = NULL;
-                                                                                    $$ = type
+                                                                                    $$ = type;
                                                                                 }
 		| ARRAY BRAC_OPEN NUM RANGE NUM BRAC_CLOSE OF simpleType	{
                                                                                     ENTRY *type = (ENTRY *)(malloc(sizeof(struct tENTRY)));
@@ -152,7 +153,7 @@ subProgHead	: FUNCTION ID args COLON simpleType SEMICOLON		{
                                                                     func->next = NULL;
                                                                 }
 		;
-args		:	{ $$ = NULL};
+args		:	{ $$ = NULL; };
 		| PARENTH_OPEN parList PARENTH_CLOSE	{ $$ = $2; }
 		;
 parList		: identListType SEMICOLON parList	{
@@ -389,8 +390,7 @@ mulOp		: MULTI		{$$ = '*';}
 		;
 %%
 
-int main() { return yyparse(); }
-int yyerror(char *s) {
+void yyerror(char *s) {
 	fprintf(stderr, "%s\n", s);
 	printf("error in line %d\n", yylineno);
-	return 0; }
+	}
