@@ -9,7 +9,7 @@ int yylineno = 1;
 comment "{"[^"}"]*"}"
 whitespace  [ \t]
 digit [0-9]
-number "-"?{digit}+("."{digit}+)?(E("-")?{digit}+)?
+number "-"?{digit}+("."{digit}+)?
 alpha [A-Za-z_]
 alpha_digit {alpha}|{digit}
 
@@ -21,6 +21,7 @@ alpha_digit {alpha}|{digit}
 
 {number} {
     yylval.string = yytext;
+    printf("\t\t%s\n", yytext);
     return NUM;
 }
 
@@ -75,9 +76,8 @@ alpha_digit {alpha}|{digit}
 "mod" return MOD;
 
 {alpha}{alpha_digit}* {
-// printf("\t%s\n", yytext);
-yylval.string = strdup(yytext);
-return ID;
+    yylval.string = strdup(yytext);
+    return ID;
 }
 
 . {
