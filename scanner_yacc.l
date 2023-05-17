@@ -22,7 +22,6 @@ alpha_digit {alpha}|{digit}
 {number} {
     float val = atof(yytext);
     yylval.number_f = val;
-    printf("\t\t%f\n", val);
     return NUM;
 }
 

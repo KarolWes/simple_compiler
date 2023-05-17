@@ -49,7 +49,6 @@ N_PROG *ast;
 
 %%
 start		: PROGRAM ID SEMICOLON varDec subProgList compStmt DOT	{
-										printf("starting -> start\n");
                                                                             ast = (N_PROG*) malloc(sizeof (struct tN_PROG));
                                                                             ENTRY * entry = (ENTRY*) malloc(sizeof (struct tENTRY));
                                                                             entry->typ = _PROG;
@@ -120,8 +119,8 @@ type		: simpleType							{
                                                                                     ENTRY *type = (ENTRY *)(malloc(sizeof(struct tENTRY)));
                                                                                     type->typ = _ARRAY;
                                                                                     type->dataType = $8;
-                                                                                    type->ext.bounds.low = atoi($3);
-                                                                                    type->ext.bounds.high = atoi($5);
+                                                                                    type->ext.bounds.low = (int)($3);
+                                                                                    type->ext.bounds.high = (int)($5);
                                                                                     type->next = NULL;
                                                                                     $$ = type;
                                                                                 }
@@ -134,7 +133,6 @@ subProgList	:	{$$ = NULL; }
 		|  subProgHead varDec compStmt SEMICOLON subProgList {
                                                                          N_PROG* prog = (N_PROG *)(malloc(sizeof(struct tN_PROG)));
                                                                          prog->entry = $1;
-                                                                         printf("subprog type -> %d\n)", prog->entry->typ);
                                                                          prog->entry->next = $2;
                                                                          prog->stmt = $3;
                                                                          prog->next = $5;
@@ -282,7 +280,8 @@ expr		: simpleExpr relOp simpleExpr	{
                                                         case '{': expr->description.operation.op = LEQ_OP; break;
                                                         case '}': expr->description.operation.op = GEQ_OP; break;
                                                     }
-                                                    expr->next = $3;
+                                                    expr->description.operation.expr->next = $3;
+                                                    expr->next = NULL;
                                                     $$ = expr;
                                                 }
 		| simpleExpr			{$$ = $1;}
@@ -296,7 +295,8 @@ simpleExpr	: term addOp simpleExpr{
                                                case '-': expr->description.operation.op = MINUS_OP; break;
                                                case '|': expr->description.operation.op = OR_OP; break;
                                            }
-                                           expr->next = $3;
+                                           expr->description.operation.expr->next = $3;
+                                           expr->next = NULL;
                                            $$ = expr;
                                        }
 		| term			{$$ = $1;}
@@ -312,7 +312,8 @@ term		: factor mulOp term	{
                                                 case '%':   expr->description.operation.op = MOD_OP; break;
                                                 case '&':   expr->description.operation.op = AND_OP; break;
                                             }
-                                            expr->next = $3;
+                                            expr->description.operation.expr->next = $3;
+                                            expr->next = NULL;
                                             $$ = expr;
                                         }
 		| factor		{
@@ -333,14 +334,14 @@ factor		: NUM			{
 		| FALSE			{
                                             N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
                                             expr->typ = CONSTANT;
-                                            expr->description.constant = "FALSE";
+                                            expr->description.constant = "false";
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
 		| TRUE			{
                                             N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
                                             expr->typ = CONSTANT;
-                                            expr->description.constant = "TRUE";
+                                            expr->description.constant = "true";
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
@@ -382,7 +383,9 @@ factor		: NUM			{
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
-		| PARENTH_OPEN expr PARENTH_CLOSE {$$ = $2;}
+		| PARENTH_OPEN expr PARENTH_CLOSE {
+							$$ = $2;
+						  }
 		;
 relOp		: LT		{$$ = '<';}
 		| GT		{$$ = '>';}
