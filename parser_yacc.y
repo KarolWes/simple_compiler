@@ -58,7 +58,6 @@ start		: PROGRAM ID SEMICOLON varDec subProgList compStmt DOT	{
                                                                             entry->ext.prog.parList = NULL;
                                                                             entry->next= $4;
                                                                             ast->entry = entry;
-
                                                                             ast->stmt = $6;
                                                                             ast->next = $5;
                                                                         }
@@ -67,7 +66,6 @@ varDec		:			{ $$ = NULL; }
 		| VAR varDecList	{ $$ = $2; }
 		;
 varDecList	: identListType SEMICOLON varDecList	{
-printf("starting -> varDecList\n");
                                                             ENTRY * n = $1 -> next;
                                                             if(n == NULL){
                                                                 $1->next = $3;
@@ -83,13 +81,10 @@ printf("starting -> varDecList\n");
 		| identListType SEMICOLON		{ $$ = $1; }
 		;
 identListType	: identList COLON type {
-printf("starting -> identListType\n");
                                            ENTRY *idListType = $1;
-                                           printf("idListType -> %d\n", &idListType);
                                            ENTRY *returnVal = idListType;
                                            while(idListType != NULL){
                                                idListType->typ = $3->typ;
-                                               printf("%d\n", idListType->typ);
                                                idListType->dataType = $3->dataType;
                                                if(idListType->typ == _ARRAY){
                                                    idListType->ext.bounds.low = $3->ext.bounds.low;
@@ -101,7 +96,6 @@ printf("starting -> identListType\n");
                                        }
 		;
 identList	: ID COMA identList	{
-printf("starting -> identList\n");
 					ENTRY *idList = (ENTRY *)(malloc(sizeof(struct tENTRY)));
 					idList->base.id = $1;
 					idList->next = $3;
@@ -235,7 +229,6 @@ assignStmt	: ID ASSIGN expr		{
 						N_ASSIGN* assign = malloc(sizeof (struct tN_ASSIGN));
 						assign->var_ref = var;
 						assign->rhs_expr = $3;
-						printf("%s\n", $3->description.constant);
 						$$ = assign;
 						}
 		| ID index ASSIGN expr		{
@@ -272,17 +265,15 @@ whileStmt	: WHILE expr DO stmt	{
 					}
 		;
 exprList	: expr COMA exprList	{
-printf("In ExprList\n");
                                             $1->next = $3;
                                             $$ = $1;
                                         }
-		| expr			{printf("passing expr\n");$$ = $1;}
+		| expr			{$$ = $1;}
 		;
 expr		: simpleExpr relOp simpleExpr	{
                                                     N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
                                                     expr->typ = OP;
                                                     expr->description.operation.expr = $1;
-                                                    printf("operator -> %c\n", $2);
                                                     switch($2){
                                                         case '=': expr->description.operation.op = EQ_OP; break;
                                                         case '!': expr->description.operation.op = NEQ_OP; break;
@@ -294,13 +285,12 @@ expr		: simpleExpr relOp simpleExpr	{
                                                     expr->next = $3;
                                                     $$ = expr;
                                                 }
-		| simpleExpr			{printf("passing simpleexpr\n");$$ = $1;}
+		| simpleExpr			{$$ = $1;}
 		;
 simpleExpr	: term addOp simpleExpr{
                                            N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
                                            expr->typ = OP;
                                            expr->description.operation.expr = $1;
-                                           printf("addOp %c\n", $2);
                                            switch($2){
                                                case '+': expr->description.operation.op = PLUS_OP; break;
                                                case '-': expr->description.operation.op = MINUS_OP; break;
@@ -309,13 +299,12 @@ simpleExpr	: term addOp simpleExpr{
                                            expr->next = $3;
                                            $$ = expr;
                                        }
-		| term			{printf("passing term\n");$$ = $1;}
+		| term			{$$ = $1;}
 		;
 term		: factor mulOp term	{
                                             N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
                                             expr->typ = OP;
                                             expr->description.operation.expr = $1;
-                                            printf("mulOp %c\n", $2);
                                             switch($2){
                                                 case '*':   expr->description.operation.op = MULTI_OP; break;
                                                 case '/':   expr->description.operation.op = SLASH_OP; break;
@@ -327,16 +316,19 @@ term		: factor mulOp term	{
                                             $$ = expr;
                                         }
 		| factor		{
-		printf("passing factor\n");$$ = $1; printf("%s\n", $$->description.constant);}
+					$$ = $1;
+					}
 		;
 factor		: NUM			{
                                             N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
                                             expr->typ = CONSTANT;
-                                            expr->description.constant = "NUM";
-                                            printf("num -> %s\n", expr->description.constant);
+                                            float num = $1;
+					    int len = snprintf(NULL, 0, "%f", num);
+					    char* res = (char *)(malloc(len + 1));
+					    snprintf(res, len+1, "%f", num);
+                                            expr->description.constant = res;
                                             expr->next = NULL;
                                             $$ = expr;
-                                            printf("num -> %s\n", $$->description.constant);
                                         }
 		| FALSE			{
                                             N_EXPR * expr = malloc(sizeof(struct tN_EXPR));

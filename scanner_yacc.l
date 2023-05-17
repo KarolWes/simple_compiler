@@ -20,8 +20,9 @@ alpha_digit {alpha}|{digit}
 "\n" {yylineno += 1;}
 
 {number} {
-    yylval.string = yytext;
-    printf("\t\t%s\n", yytext);
+    float val = atof(yytext);
+    yylval.number_f = val;
+    printf("\t\t%f\n", val);
     return NUM;
 }
 
