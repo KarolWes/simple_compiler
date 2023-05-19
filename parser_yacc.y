@@ -281,6 +281,7 @@ expr		: simpleExpr relOp simpleExpr	{
                                                         case '}': expr->description.operation.op = GEQ_OP; break;
                                                     }
                                                     expr->description.operation.expr->next = $3;
+                                                    expr->parenthesis = 0;
                                                     expr->next = NULL;
                                                     $$ = expr;
                                                 }
@@ -296,6 +297,7 @@ simpleExpr	: term addOp simpleExpr{
                                                case '|': expr->description.operation.op = OR_OP; break;
                                            }
                                            expr->description.operation.expr->next = $3;
+                                           expr->parenthesis = 0;
                                            expr->next = NULL;
                                            $$ = expr;
                                        }
@@ -313,6 +315,7 @@ term		: factor mulOp term	{
                                                 case '&':   expr->description.operation.op = AND_OP; break;
                                             }
                                             expr->description.operation.expr->next = $3;
+                                            expr->parenthesis = 0;
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
@@ -328,6 +331,7 @@ factor		: NUM			{
 					    char* res = (char *)(malloc(len + 1));
 					    snprintf(res, len+1, "%f", num);
                                             expr->description.constant = res;
+                                            expr->parenthesis = 0;
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
@@ -335,6 +339,7 @@ factor		: NUM			{
                                             N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
                                             expr->typ = CONSTANT;
                                             expr->description.constant = "false";
+                                            expr->parenthesis = 0;
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
@@ -342,6 +347,7 @@ factor		: NUM			{
                                             N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
                                             expr->typ = CONSTANT;
                                             expr->description.constant = "true";
+                                            expr->parenthesis = 0;
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
@@ -352,6 +358,7 @@ factor		: NUM			{
                                             var->index = NULL;
                                             expr->typ = VAR_REF;
                                             expr->description.var_ref = var;
+                                            expr->parenthesis = 0;
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
@@ -362,6 +369,7 @@ factor		: NUM			{
                                             var->index = $2;
                                             expr->typ = VAR_REF;
                                             expr->description.var_ref = var;
+                                            expr->parenthesis = 0;
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
@@ -372,6 +380,7 @@ factor		: NUM			{
                                             call->par_list = $2;
                                             expr->typ = FUNC_CALL;
                                             expr->description.func_call = call;
+                                            expr->parenthesis = 0;
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
@@ -380,11 +389,13 @@ factor		: NUM			{
                                             expr->typ = OP;
                                             expr->description.operation.op = NOT_OP;
                                             expr->description.operation.expr = $2;
+                                            expr->parenthesis = $2->parenthesis;
                                             expr->next = NULL;
                                             $$ = expr;
                                         }
 		| PARENTH_OPEN expr PARENTH_CLOSE {
 							$$ = $2;
+							$$->parenthesis = 1;
 						  }
 		;
 relOp		: LT		{$$ = '<';}

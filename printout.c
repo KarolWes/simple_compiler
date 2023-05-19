@@ -127,6 +127,9 @@ void printExpr(N_EXPR *input, char* separator) {
 }
 
 void printExprInner(N_EXPR *input, char* separator) {
+    if(input->parenthesis == 1){
+        printf("(");
+    }
     switch (input->typ) {
         case CONSTANT:
             printf("%s", input->description.constant);
@@ -140,6 +143,9 @@ void printExprInner(N_EXPR *input, char* separator) {
         case OP: // problem
             printOp(input);
             break;
+    }
+    if(input->parenthesis == 1){
+        printf(")");
     }
 }
 

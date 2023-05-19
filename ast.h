@@ -51,6 +51,7 @@ typedef struct tN_EXPR {
         } operation;
         struct tN_CALL *func_call; /* function call */
     } description;
+    int parenthesis;
     struct tN_EXPR *next; /* in case of expression list */
 } N_EXPR;
 
