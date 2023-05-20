@@ -18,6 +18,8 @@ char* mainDef;
 int indentLevel;
 _DATA_TYPE returnType;
 
+FILE *f;
+
 void printIndent();
 char * typeToStr(_DATA_TYPE type);
 char *operatorToStr(_OPERATOR o);
@@ -29,11 +31,11 @@ void printAssign(N_ASSIGN *input, int ignore_indent);
 void printStatement(N_STMT* input, int ignore_marker, int ignore_indent);
 void printExpr(N_EXPR *input, char* separator);
 void printEntry(ENTRY *input);
-void printProgramBase(N_PROG *input);
-void printProgram(N_PROG *input);
+void printProgramBase(N_PROG *input, int set_global);
+void printProgram(N_PROG *input, int set_global);
 void printArgs(ENTRY *input);
 void printOp(N_EXPR *input);
 void printExprInner(N_EXPR *input, char* separator);
-void run();
+void run(int set_global);
 
 #endif //SCANNER_L_PRINTOUT_H

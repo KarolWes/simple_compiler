@@ -1,6 +1,6 @@
 #include "printout.h"
 
 int main() {
-    run();
+    run(1);
     return 0;
 }
