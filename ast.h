@@ -4,27 +4,19 @@
 typedef enum { _FALSE=0, _TRUE } _BOOLEAN;
 typedef enum { _BOOL=0, _INT, _REAL, _VOID, _MAIN} _DATA_TYPE;
 typedef enum { NO_OP=0, EQ_OP, NEQ_OP, GT_OP, GEQ_OP, LT_OP, LEQ_OP, PLUS_OP, MINUS_OP, MULTI_OP, SLASH_OP, DIV_OP, MOD_OP, AND_OP, OR_OP, NOT_OP } _OPERATOR;
-
+typedef enum { _ASSIGN=0, _IF, _WHILE, _PROC_CALL } _STMT_TYPE;
 /* 0. Entry */
 
 typedef struct tENTRY{
     enum {_CONST = 0, _VAR, _ARRAY, _PROG, _CALL} typ;
     _DATA_TYPE dataType;
-    union uEntryBase{
-        char *id;
-        int intVal;
-        float floatVal;
-        _BOOLEAN boolVal;
-    } base;
+    char *id;
     union uEntryExt{
         struct tEntryBounds{
             int low;
             int high;
         } bounds;
-        union uEntrySubProg{
-            struct tENTRY *parList;
-            struct tN_PROG *ast;
-        } prog;
+        struct tENTRY *parList;
     }ext;
     struct tENTRY *next;
 }ENTRY;
@@ -91,7 +83,7 @@ typedef struct tN_CALL {
 /* 7. Statement */
 
 typedef struct tN_STMT {
-    enum { _ASSIGN=0, _IF, _WHILE, _PROC_CALL } typ;
+    _STMT_TYPE typ;
     union uNodes{
         N_ASSIGN *assign_stmt;
         N_IF *if_stmt;
@@ -110,3 +102,4 @@ typedef struct tN_PROG {
     struct tN_PROG *next; /* next subprogram */
 } N_PROG;
 
+N_PROG *ast;

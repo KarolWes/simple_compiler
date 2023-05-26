@@ -37,5 +37,6 @@ void printArgs(ENTRY *input);
 void printOp(N_EXPR *input);
 void printExprInner(N_EXPR *input, char* separator);
 void run(int set_global);
+void cleanSymTable(ENTRY* symTab);
 
 #endif //SCANNER_L_PRINTOUT_H

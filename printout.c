@@ -83,6 +83,7 @@ void printVarRef(N_VAR_REF *input) {
             fprintf(f, "]");
         }
     }
+    free(input);
 }
 
 void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
@@ -113,7 +114,9 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
                 printCall(input->node.proc_call, ";\n", ignore_indent);
                 break;
         }
+        N_STMT *old = input;
         input = input->next;
+        free(old);
     }
     indentLevel-=1;
     if (marker == 1){
@@ -121,6 +124,7 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
         printf("}\n");
         fprintf(f, "}\n");
     }
+    free(input);
 }
 
 void printExpr(N_EXPR *input, char* separator) {
@@ -130,12 +134,15 @@ void printExpr(N_EXPR *input, char* separator) {
             printf("%s", separator);
             fprintf(f, "%s", separator);
         }
+        N_EXPR *old = input;
         input = input->next;
+        free(old);
     }
-
+    free(input);
 }
 
 void printExprInner(N_EXPR *input, char* separator) {
+
     float num;
     if(input->parenthesis == 1){
         printf("(");
@@ -170,6 +177,7 @@ void printExprInner(N_EXPR *input, char* separator) {
         printf(")");
         fprintf(f,")");
     }
+
 }
 
 void printOp(N_EXPR  *input){
@@ -177,6 +185,7 @@ void printOp(N_EXPR  *input){
         printf("! ");
         fprintf(f, "! ");
         printExprInner(input->description.operation.expr, "");
+        free(input->description.operation.expr);
     }
     else{
         N_EXPR *e = input->description.operation.expr;
@@ -187,10 +196,12 @@ void printOp(N_EXPR  *input){
                 printf(" %s ", operatorToStr(input->description.operation.op));
                 fprintf(f, " %s ", operatorToStr(input->description.operation.op));
             }
+            N_EXPR *old = e;
             e = e->next;
+            free(old);
         }
     }
-
+    free(input);
 }
 
 void printAssign(N_ASSIGN *input, int ignore_indent) {
@@ -267,21 +278,21 @@ void printEntry(ENTRY *input) {
             case _VAR:
                 printf("%s ", typeToStr(input->dataType));
                 fprintf(f, "%s ", typeToStr(input->dataType));
-                printf("%s;\n",input->base.id);
-                fprintf(f, "%s;\n",input->base.id);
+                printf("%s;\n",input->id);
+                fprintf(f, "%s;\n",input->id);
                 break;
             case _ARRAY:
                 printf("%s ", typeToStr(input->dataType));
                 fprintf(f, "%s ", typeToStr(input->dataType));
-                printf("%s ",input->base.id);
-                fprintf(f, "%s ",input->base.id);
+                printf("%s ",input->id);
+                fprintf(f, "%s ",input->id);
                 printf("[%d];\n", input->ext.bounds.high - input->ext.bounds.low+1);
                 fprintf(f, "[%d];\n", input->ext.bounds.high - input->ext.bounds.low+1);
                 break;
             case _PROG:
                 if (input->dataType == _MAIN){
-                    printf("\n\t/* program: '%s' */\n\n\n", input->base.id);
-                    fprintf(f, "\n\t/* program: '%s' */\n\n\n", input->base.id);
+                    printf("\n\t/* program: '%s' */\n\n\n", input->id);
+                    fprintf(f, "\n\t/* program: '%s' */\n\n\n", input->id);
                     inFun = "main";
                 }
                 returnType = input->dataType;
@@ -290,22 +301,23 @@ void printEntry(ENTRY *input) {
                     fprintf(f, "%s\n", mainDef);
                 }
                 else{
-                    inFun = input->base.id;
+                    inFun = input->id;
                     printf("%s ", typeToStr(input->dataType));
                     fprintf(f, "%s ", typeToStr(input->dataType));
-                    printf("%s(", input->base.id);
-                    fprintf(f, "%s(", input->base.id);
-                    printArgs(input->ext.prog.parList);
+                    printf("%s(", input->id);
+                    fprintf(f, "%s(", input->id);
+                    printArgs(input->ext.parList);
                 }
                 return;
             case _CALL:
-                inFun = input->base.id;
+                inFun = input->id;
                 returnType = input->dataType;
                 printf("%s ", typeToStr(input->dataType));
                 fprintf(f, "%s ", typeToStr(input->dataType));
-                printf("%s(",input->base.id);
-                fprintf(f, "%s(",input->base.id);
-                printArgs(input->ext.prog.parList);
+                printf("%s(",input->id);
+                fprintf(f, "%s(",input->id);
+                printArgs(input->ext.parList);
+                free(input->ext.parList);
                 printf(")\n");
                 fprintf(f, ")\n");
                 return;
@@ -321,8 +333,8 @@ void printArgs(ENTRY *input) {
     while(input != NULL){
         printf("%s ", typeToStr(input->dataType));
         fprintf(f, "%s ", typeToStr(input->dataType));
-        printf("%s", input->base.id);
-        fprintf(f, "%s", input->base.id);
+        printf("%s", input->id);
+        fprintf(f, "%s", input->id);
         if(input->typ == _ARRAY){
             printf("[%d]", input->ext.bounds.high - input->ext.bounds.low+1);
             fprintf(f, "[%d]", input->ext.bounds.high - input->ext.bounds.low+1);
@@ -354,16 +366,20 @@ void printProgramBase(N_PROG *input, int set_global) {
         }
         if(input != NULL){
             printProgram(input, set_global);
+            N_PROG *old = input;
             input = input->next;
+            free(old);
         }
         printf("\n");
         fprintf(f, "\n");
     }
     printProgram(main, set_global);
+    free(main);
 }
 
 void printProgram(N_PROG *input, int set_global) {
     indentLevel = 0;
+    ENTRY* vars = NULL;
     if (input != NULL){
         printIndent();
         printEntry(input->entry); // header
@@ -371,7 +387,7 @@ void printProgram(N_PROG *input, int set_global) {
         fprintf(f, "{\n");
         indentLevel+=1;
         if(returnType != _MAIN || set_global != 1){
-            ENTRY* vars = input->entry->next;
+            vars = input->entry->next;
             if (vars != NULL){
                 printEntry(vars);
             }
@@ -400,6 +416,9 @@ void printProgram(N_PROG *input, int set_global) {
         printf("}\n");
         fprintf(f, "}\n");
         inFun = "";
+        free(input->entry);
+        free(input->entry->ext.parList);
+        cleanSymTable(vars);
     }
 }
 
@@ -426,6 +445,16 @@ void run(int set_global) {
     printProgramBase(ast, set_global);
     fprintf(f, "\n\n\t /* Created using parser by Karol Wesolowski */");
     fclose(f);
+    free(ast);
+}
+
+void cleanSymTable(ENTRY *symTab) {
+    ENTRY  *new = NULL;
+    while(symTab != NULL){
+        new = symTab->next;
+        free(symTab);
+        symTab = new;
+    }
 }
 
 

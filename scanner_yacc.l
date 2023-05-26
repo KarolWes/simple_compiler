@@ -81,8 +81,8 @@ alpha_digit {alpha}|{digit}
 }
 
 . {
-printf("\t<Line %d> Error: Unrecognised character %s\n", yylineno, yytext);
-return -1;
+    printf("\t<Line %d> Error: Unrecognised character %s\n", yylineno, yytext);
+    return -1;
 }
 
 %%
