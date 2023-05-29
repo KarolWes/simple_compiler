@@ -2,6 +2,7 @@
 // Created by Karol on 25.05.2023.
 //
 
+#include <stdio.h>
 #include "parser_functions.h"
 
 void startFun(char* id, ENTRY* vars, N_PROG *subs, N_STMT *body){
@@ -65,7 +66,7 @@ ENTRY *simpleTypeFun(_DATA_TYPE type, int array, float lower, float upper) {
         }
         new_upper = (int)(upper);
         if(new_lower > new_upper){
-            yyerror("Error: array declaration with second index lower than the first\\n");
+            yyerror("Error: array declaration with second index lower than the first\n");
             exit(11);
         }
         output->ext.bounds.low = new_lower;
@@ -136,3 +137,52 @@ N_EXPR *booleans(char* val){
     return expr;
 }
 
+N_EXPR *numConversion(float num){
+    N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
+    expr->typ = CONSTANT;
+    int len = snprintf(NULL, 0, "%f", num);
+    char* res = (char *)(malloc(len + 1));
+    snprintf(res, len+1, "%f", num);
+    expr->description.constant = res;
+    expr->parenthesis = 0;
+    expr->next = NULL;
+    return expr;
+}
+
+N_EXPR *identifiers(char* name, N_EXPR *extension, int type){
+    N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
+    if (type == 2) // function call
+    {
+        N_CALL * call = malloc(sizeof(struct tN_CALL));
+        call->id = name;
+        call->par_list = extension;
+        expr->typ = FUNC_CALL;
+        expr->description.func_call = call;
+    }
+    else{
+        expr->typ = VAR_REF;
+        N_VAR_REF * var = malloc(sizeof(struct tN_VAR_REF));
+        var->id = name;
+        if(type == 1) //array
+        {
+            var->index = extension;
+        }
+        else{
+            var->index = NULL;
+        }
+        expr->description.var_ref = var;
+    }
+    expr->parenthesis = 0;
+    expr->next = NULL;
+    return expr;
+}
+
+N_ASSIGN *assingmentFun(char* name, N_EXPR *index, N_EXPR *rhs){
+    N_VAR_REF* var = malloc(sizeof(struct tN_VAR_REF));
+    var->id = name;
+    var->index = index;
+    N_ASSIGN* assign = malloc(sizeof (struct tN_ASSIGN));
+    assign->var_ref = var;
+    assign->rhs_expr = rhs;
+    return assign;
+}

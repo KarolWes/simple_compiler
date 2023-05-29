@@ -16,6 +16,8 @@ _DATA_TYPE mainType;
 char* inFun;
 char* mainDef;
 int indentLevel;
+ENTRY *globalVars;
+ENTRY *localVars;
 _DATA_TYPE returnType;
 
 FILE *f;
@@ -38,5 +40,8 @@ void printOp(N_EXPR *input);
 void printExprInner(N_EXPR *input, char* separator);
 void run(int set_global);
 void cleanSymTable(ENTRY* symTab);
-
+ENTRY* variableLookup(char* name);
+void findDuplicates(ENTRY *scope);
+void printScope();
+ENTRY *append(ENTRY* a, ENTRY*b);
 #endif //SCANNER_L_PRINTOUT_H

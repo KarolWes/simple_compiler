@@ -123,24 +123,8 @@ procCall	: ID params	{
 params		: PARENTH_OPEN exprList PARENTH_CLOSE 	{$$ = $2;}
 		| PARENTH_OPEN PARENTH_CLOSE		{$$ = NULL;}
 		;
-assignStmt	: ID ASSIGN expr		{
-						N_VAR_REF* var = malloc(sizeof(struct tN_VAR_REF));
-						var->id = $1;
-						var->index = NULL;
-						N_ASSIGN* assign = malloc(sizeof (struct tN_ASSIGN));
-						assign->var_ref = var;
-						assign->rhs_expr = $3;
-						$$ = assign;
-						}
-		| ID index ASSIGN expr		{
-                                                    N_VAR_REF* var = malloc(sizeof(struct tN_VAR_REF));
-                                                    var->id = $1;
-                                                    var->index = $2;
-                                                    N_ASSIGN* assign = malloc(sizeof (struct tN_ASSIGN));
-                                                    assign->var_ref = var;
-                                                    assign ->rhs_expr = $4;
-                                                    $$ = assign;
-                                                }
+assignStmt	: ID ASSIGN expr		{ $$ = assingmentFun($1, NULL, $3);}
+		| ID index ASSIGN expr		{ $$ = assingmentFun($1, $2, $4); }
 		;
 index		: BRAC_OPEN expr BRAC_CLOSE		{$$ = $2;}
 		| BRAC_OPEN expr RANGE expr BRAC_CLOSE	{
@@ -180,62 +164,13 @@ simpleExpr	: term addOp simpleExpr{ $$ = simpleExprFun($1,$2,$3); }
 term		: factor mulOp term	{ $$ = simpleExprFun($1,$2,$3); }
 		| factor		{ $$ = $1; }
 		;
-factor		: NUM			{
-                                            N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
-                                            expr->typ = CONSTANT;
-                                            float num = $1;
-					    int len = snprintf(NULL, 0, "%f", num);
-					    char* res = (char *)(malloc(len + 1));
-					    snprintf(res, len+1, "%f", num);
-                                            expr->description.constant = res;
-                                            expr->parenthesis = 0;
-                                            expr->next = NULL;
-                                            $$ = expr;
-                                        }
+factor		: NUM			{ $$ = numConversion($1); }
 		| FALSE			{ $$ = booleans("false"); }
 		| TRUE			{ $$ = booleans("true"); }
-		| ID			{
-                                            N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
-                                            N_VAR_REF * var = malloc(sizeof(struct tN_VAR_REF));
-                                            var->id = $1;
-                                            var->index = NULL;
-                                            expr->typ = VAR_REF;
-                                            expr->description.var_ref = var;
-                                            expr->parenthesis = 0;
-                                            expr->next = NULL;
-                                            $$ = expr;
-                                        }
-		| ID index		{
-                                            N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
-                                            N_VAR_REF * var = malloc(sizeof(struct tN_VAR_REF));
-                                            var->id = $1;
-                                            var->index = $2;
-                                            expr->typ = VAR_REF;
-                                            expr->description.var_ref = var;
-                                            expr->parenthesis = 0;
-                                            expr->next = NULL;
-                                            $$ = expr;
-                                        }
-		| ID params		{
-                                            N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
-                                            N_CALL * call = malloc(sizeof(struct tN_CALL));
-                                            call->id = $1;
-                                            call->par_list = $2;
-                                            expr->typ = FUNC_CALL;
-                                            expr->description.func_call = call;
-                                            expr->parenthesis = 0;
-                                            expr->next = NULL;
-                                            $$ = expr;
-                                        }
-		| NOT factor		{
-                                            N_EXPR * expr =  malloc(sizeof(struct tN_EXPR));
-                                            expr->typ = OP;
-                                            expr->description.operation.op = NOT_OP;
-                                            expr->description.operation.expr = $2;
-                                            expr->parenthesis = $2->parenthesis;
-                                            expr->next = NULL;
-                                            $$ = expr;
-                                        }
+		| ID			{ $$ = identifiers($1, NULL, 0); }
+		| ID index		{ $$ = identifiers($1, $2, 1); }
+		| ID params		{ $$ = identifiers($1, $2, 2); }
+		| NOT factor		{ $$ = simpleExprFun($2, NOT_OP, NULL); }
 		| PARENTH_OPEN expr PARENTH_CLOSE {
 							$$ = $2;
 							$$->parenthesis = 1;
