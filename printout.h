@@ -18,6 +18,7 @@ char* mainDef;
 int indentLevel;
 ENTRY *globalVars;
 ENTRY *localVars;
+ENTRY *res;
 _DATA_TYPE returnType;
 
 FILE *f;

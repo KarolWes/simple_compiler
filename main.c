@@ -4,7 +4,7 @@
 
 
 int main(int argc, char *argv[]) {
-    printf("Main, hello\n");
+    printf("Main, hello; argc: %d\n", argc);
     if(argc != 2)
     {
         printf("running\n");

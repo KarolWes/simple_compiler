@@ -83,7 +83,7 @@ void printVarRef(N_VAR_REF *input) {
             fprintf(f, "]");
         }
     }
-    free(input);
+//    free(input);
 }
 
 void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
@@ -116,7 +116,7 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
         }
         N_STMT *old = input;
         input = input->next;
-        free(old);
+//        free(old);
     }
     indentLevel-=1;
     if (marker == 1){
@@ -124,7 +124,7 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
         printf("}\n");
         fprintf(f, "}\n");
     }
-    free(input);
+//    free(input);
 }
 
 void printExpr(N_EXPR *input, char* separator) {
@@ -137,9 +137,9 @@ void printExpr(N_EXPR *input, char* separator) {
         }
         N_EXPR *old = input;
         input = input->next;
-        free(old);
+//        free(old);
     }
-    free(input);
+//    free(input);
 }
 
 void printExprInner(N_EXPR *input, char* separator) {
@@ -166,7 +166,12 @@ void printExprInner(N_EXPR *input, char* separator) {
 
             break;
         case VAR_REF:
-            ans = variableLookup(input->description.var_ref->id);
+            printf("\t\tFUN: %s\n", inFun);
+            if(strcmp(input->description.var_ref->id, inFun) == 0){
+                ans = variableLookup("result");
+            }else{
+                ans = variableLookup(input->description.var_ref->id);
+            }
             if (ans == NULL)
             {
                 printf("Variable '%s' referenced without declaration\n", input->description.var_ref->id);
@@ -194,7 +199,7 @@ void printOp(N_EXPR  *input){
         printf("! ");
         fprintf(f, "! ");
         printExprInner(input->description.operation.expr, "");
-        free(input->description.operation.expr);
+//        free(input->description.operation.expr);
     }
     else{
         N_EXPR *e = input->description.operation.expr;
@@ -207,10 +212,10 @@ void printOp(N_EXPR  *input){
             }
             N_EXPR *old = e;
             e = e->next;
-            free(old);
+//            free(old);
         }
     }
-    free(input);
+//    free(input);
 }
 
 void printAssign(N_ASSIGN *input, int ignore_indent) {
@@ -287,8 +292,17 @@ void printEntry(ENTRY *input) {
             case _CONST:
                 break;
             case _VAR:
-                check = variableLookup(input->id);
-
+                printf("\t\tFUN: %s\n", inFun);
+                if(strcmp(input->id, inFun) == 0){
+                    check = variableLookup("result");
+                }else{
+                    check = variableLookup(input->id);
+                }
+                if (check == NULL)
+                {
+                    printf("Variable '%s' referenced without declaration\n", input->id);
+                    exit(12);
+                }
                 printf("%s ", typeToStr(input->dataType));
                 fprintf(f, "%s ", typeToStr(input->dataType));
                 printf("%s;\n",input->id);
@@ -330,11 +344,12 @@ void printEntry(ENTRY *input) {
                 fprintf(f, "%s ", typeToStr(input->dataType));
                 printf("%s(",input->id);
                 fprintf(f, "%s(",input->id);
-
                 //does that work?
                 printf("In call:\n");
+
                 if(input->ext.parList != NULL){
                     printf("There is something to be added\n");
+                    printScope();
                     ENTRY *vars = localVars;
                     if(vars == NULL){
                         printf("Original was empty\n");
@@ -382,7 +397,16 @@ void printArgs(ENTRY *input) {
 void printProgramBase(N_PROG *input, int set_global) {
     N_PROG* main;
     while( input != NULL){
+        localVars = NULL;
+        res->next = NULL;
+        printf("Local variables should be flushed\n");
+        printScope();
+        if(input->entry->dataType != _VOID){
+            res->typ = input->entry->dataType;
+            localVars = res;
+        }
         if(input->entry->dataType == _MAIN){
+            printf("Type is main. Global: %d\n", set_global);
             main = input;
             input = input->next;
             if(set_global == 1){
@@ -405,14 +429,14 @@ void printProgramBase(N_PROG *input, int set_global) {
             printProgram(input, set_global);
             N_PROG *old = input;
             input = input->next;
-            free(old);
+//            free(old);
         }
         printf("\n");
         fprintf(f, "\n");
     }
     printProgram(main, set_global);
     globalVars = NULL;
-    free(main);
+//    free(main);
 }
 
 void printProgram(N_PROG *input, int set_global) {
@@ -427,6 +451,7 @@ void printProgram(N_PROG *input, int set_global) {
         if(returnType != _MAIN || set_global != 1){
             vars = input->entry->next;
             printf("Trying to add variables\n");
+            printScope();
             ENTRY *tmp = localVars;
             if(localVars == NULL){
                 localVars = vars;
@@ -472,8 +497,8 @@ void printProgram(N_PROG *input, int set_global) {
         fprintf(f, "}\n");
         inFun = "";
         localVars = NULL;
-        free(input->entry);
-        free(input->entry->ext.parList);
+//        free(input->entry);
+//        free(input->entry->ext.parList);
         cleanSymTable(vars);
     }
 }
@@ -486,6 +511,10 @@ void printIndent() {
 }
 
 void run(int set_global) {
+    res = (ENTRY*)malloc(sizeof(struct tENTRY));
+    res->id = "result";
+    res->next = NULL;
+
     if(set_global != 1 && set_global != 0){
         printf("Unavailable value. Try 1 or 0");
         exit(3);
@@ -501,19 +530,20 @@ void run(int set_global) {
     printProgramBase(ast, set_global);
     fprintf(f, "\n\n\t /* Created using parser by Karol Wesolowski */");
     fclose(f);
-    free(ast);
+//    free(ast);
 }
 
 void cleanSymTable(ENTRY *symTab) {
     ENTRY  *new = NULL;
     while(symTab != NULL){
         new = symTab->next;
-        free(symTab);
+//        free(symTab);
         symTab = new;
     }
 }
 
 void printScope(){
+    printf("\tSCOPE\n");
     ENTRY *current = globalVars;
     while (current != NULL){
         printf("\tglobal: %s\n", current->id);
