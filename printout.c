@@ -68,6 +68,17 @@ void printVarRef(N_VAR_REF *input) {
     if(input == NULL){
         return;
     }
+    ENTRY* ans;
+    if(strcmp(input->id, inFun) == 0){
+        ans = variableLookup("result");
+    }else{
+        ans = variableLookup(input->id);
+    }
+    if (ans == NULL)
+    {
+        printf("Variable '%s' referenced without declaration\n", input->id);
+        exit(12);
+    }
     if(strcmp(input->id, inFun) == 0){
         printf("result");
         fprintf(f, "result");
@@ -78,12 +89,24 @@ void printVarRef(N_VAR_REF *input) {
         if (input->index != NULL) {
             printf("[");
             fprintf(f, "[");
-            printExpr(input->index, "");
+            N_EXPR* i = input->index;
+            if(i->typ == CONSTANT){
+                printf("Illegal array subscription: Boolean\n");
+                exit(13);
+            }
+            if(i->typ == VAR_REF){
+                ENTRY *e = variableLookup(i->description.var_ref->id);
+                if(e->dataType != _INT){
+                    printf("Illegal array subscription\n");
+                    exit(13);
+                }
+            }
+            printExpr(i, "");
             printf("]");
             fprintf(f, "]");
         }
     }
-//    free(input);
+    free(input);
 }
 
 void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
@@ -116,7 +139,7 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
         }
         N_STMT *old = input;
         input = input->next;
-//        free(old);
+        free(old);
     }
     indentLevel-=1;
     if (marker == 1){
@@ -124,7 +147,7 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
         printf("}\n");
         fprintf(f, "}\n");
     }
-//    free(input);
+    free(input);
 }
 
 void printExpr(N_EXPR *input, char* separator) {
@@ -137,9 +160,9 @@ void printExpr(N_EXPR *input, char* separator) {
         }
         N_EXPR *old = input;
         input = input->next;
-//        free(old);
+        free(old);
     }
-//    free(input);
+    free(input);
 }
 
 void printExprInner(N_EXPR *input, char* separator) {
@@ -163,27 +186,14 @@ void printExprInner(N_EXPR *input, char* separator) {
                 printf("%f", num);
                 fprintf(f, "%f", num);
             }
-
             break;
         case VAR_REF:
-            printf("\t\tFUN: %s\n", inFun);
-            if(strcmp(input->description.var_ref->id, inFun) == 0){
-                ans = variableLookup("result");
-            }else{
-                ans = variableLookup(input->description.var_ref->id);
-            }
-            if (ans == NULL)
-            {
-                printf("Variable '%s' referenced without declaration\n", input->description.var_ref->id);
-                exit(12);
-            }
             printVarRef(input->description.var_ref);
             break;
         case FUNC_CALL:
-            printf("Funccall\n");
             printCall(input->description.func_call, separator, 1);
             break;
-        case OP: // problem
+        case OP:
             printOp(input);
             break;
     }
@@ -240,12 +250,36 @@ void printCall(N_CALL *input, char* separator, int ignore_indent) {
     if(ignore_indent == 0){
         printIndent();
     }
-
+    ENTRY * fun = funLookup(input->id);
+    if(fun == NULL){
+        printf("Function referenced without declaration: '%s'\n", input->id);
+        exit(13);
+    }
     printf("%s(", input->id);
     fprintf(f, "%s(", input->id);
+    checkParameters(fun, input->par_list);
     printExpr(input->par_list, ", ");
     printf(")%s", separator);
     fprintf(f, ")%s", separator);
+}
+
+void checkParameters(ENTRY* fun, N_EXPR* pars){
+    ENTRY* formal = fun->ext.parList;
+    int i = 0;
+    while(formal != NULL){
+        printf("%s\n", formal->id);
+        if(pars == NULL){
+            printf("Too few arguments provided for function '%s'. Should be more than %d\n", fun->id, i);
+            exit(14);
+        }
+        formal = formal->next;
+        pars = pars->next;
+        i += 1;
+    }
+    if(pars != NULL){
+        printf("Too many arguments provided for function '%s'. Should be %d\n", fun->id, i);
+        exit(14);
+    }
 }
 
 void printWhile(N_WHILE *input, int ignore_indent) {
@@ -337,6 +371,21 @@ void printEntry(ENTRY *input) {
                 }
                 return;
             case _CALL:
+                check = funcs;
+                if(funcs == NULL){
+                    funcs = input;
+                }
+                else{
+                    printf("Checking next\n");
+                    while(check->next != NULL){
+                        check = check->next;
+                        printf("NEXT!");
+                    }
+                    check->next = input;
+                    check = check->next;
+                    check->next = NULL;
+                }
+                findDuplicates(globalVars);
                 inFun = input->id;
                 printf("\t%s\n", inFun);
                 returnType = input->dataType;
@@ -344,16 +393,13 @@ void printEntry(ENTRY *input) {
                 fprintf(f, "%s ", typeToStr(input->dataType));
                 printf("%s(",input->id);
                 fprintf(f, "%s(",input->id);
-                //does that work?
                 printf("In call:\n");
-
                 if(input->ext.parList != NULL){
                     printf("There is something to be added\n");
                     printScope();
                     ENTRY *vars = localVars;
                     if(vars == NULL){
-                        printf("Original was empty\n");
-                        localVars = input->ext.parList;
+                        localVars = extractParams(input->ext.parList);
                     }
                     else{
                         printf("Trying to go to next\n");
@@ -361,7 +407,7 @@ void printEntry(ENTRY *input) {
                             printf("NEXT!\n");
                             vars = vars->next;
                         }
-                        vars->next = input->ext.parList;
+                        vars->next = extractParams(input->ext.parList);
                     }
                 }
                 printArgs(input->ext.parList);
@@ -374,6 +420,31 @@ void printEntry(ENTRY *input) {
         }
         input = input->next;
     }
+}
+
+ENTRY* extractParams(ENTRY* params) {
+    ENTRY *head = NULL;
+    ENTRY *current = NULL;
+    while(params != NULL){
+        ENTRY *entry = (ENTRY*) malloc(sizeof (struct tENTRY));
+        entry->typ = params->typ;
+        entry->id = params ->id;
+        entry->dataType = params->dataType;
+        if(entry->typ == _ARRAY){
+            entry->ext = params->ext;
+        }
+        entry->next = NULL;
+        if(head == NULL){
+            head = entry;
+            current = head;
+        }
+        else{
+            current->next = entry;
+            current = current->next;
+        }
+        params = params->next;
+    }
+    return head;
 }
 
 void printArgs(ENTRY *input) {
@@ -393,14 +464,23 @@ void printArgs(ENTRY *input) {
         input = input->next;
     }
 }
+ENTRY *constructMain(){
+    ENTRY *f = (ENTRY*) malloc(sizeof (struct tENTRY));
+    f->typ = _CALL;
+    f->id = "main";
+    f->dataType = _MAIN;
+    f->ext.parList = NULL;
+    f->next = NULL;
+    return f;
+}
 
 void printProgramBase(N_PROG *input, int set_global) {
+    funcs = constructMain();
     N_PROG* main;
     while( input != NULL){
         localVars = NULL;
         res->next = NULL;
         printf("Local variables should be flushed\n");
-        printScope();
         if(input->entry->dataType != _VOID){
             res->typ = input->entry->dataType;
             localVars = res;
@@ -444,12 +524,12 @@ void printProgram(N_PROG *input, int set_global) {
     ENTRY* vars = NULL;
     if (input != NULL){
         printIndent();
+        vars = input->entry->next;
         printEntry(input->entry); // header
         printf("{\n");
         fprintf(f, "{\n");
         indentLevel+=1;
         if(returnType != _MAIN || set_global != 1){
-            vars = input->entry->next;
             printf("Trying to add variables\n");
             printScope();
             ENTRY *tmp = localVars;
@@ -499,7 +579,7 @@ void printProgram(N_PROG *input, int set_global) {
         localVars = NULL;
 //        free(input->entry);
 //        free(input->entry->ext.parList);
-        cleanSymTable(vars);
+        //cleanSymTable(vars);
     }
 }
 
@@ -530,14 +610,14 @@ void run(int set_global) {
     printProgramBase(ast, set_global);
     fprintf(f, "\n\n\t /* Created using parser by Karol Wesolowski */");
     fclose(f);
-//    free(ast);
+    free(ast);
 }
 
 void cleanSymTable(ENTRY *symTab) {
     ENTRY  *new = NULL;
     while(symTab != NULL){
         new = symTab->next;
-//        free(symTab);
+        free(symTab);
         symTab = new;
     }
 }
@@ -547,6 +627,11 @@ void printScope(){
     ENTRY *current = globalVars;
     while (current != NULL){
         printf("\tglobal: %s\n", current->id);
+        current = current->next;
+    }
+    current = funcs;
+    while (current != NULL){
+        printf("\tfunctions: %s\n", current->id);
         current = current->next;
     }
     current = localVars;
@@ -582,7 +667,23 @@ ENTRY* variableLookup(char* name){
     return output;
 }
 
+ENTRY *funLookup(char* name){
+    printf("in Lookup; goal -> %s\n", name);
+    ENTRY *output = NULL;
+    ENTRY *current = funcs;
+    while(current != NULL){
+        printf("%s\n", current->id);
+        if(strcmp(current->id, name) == 0){
+            output = current;
+            break;
+        }
+        current = current->next;
+    }
+    return output;
+}
+
 void findDuplicates(ENTRY *scope){
+    printScope();
     int res = 0;
     ENTRY *current = scope;
     ENTRY *next;
@@ -590,7 +691,15 @@ void findDuplicates(ENTRY *scope){
         next = current->next;
         while(next != NULL){
             if (strcmp(current->id, next->id) == 0){
-                printf("Redeclaration of variable '%s' within one scope\n", current->id);
+                printf("Redeclaration of variable/function '%s' within one scope\n", current->id);
+                res += 1;
+            }
+            next = next->next;
+        }
+        next = funcs;
+        while(next != NULL){
+            if (strcmp(current->id, next->id) == 0){
+                printf("Redeclaration of variable/function '%s' within one scope\n", current->id);
                 res += 1;
             }
             next = next->next;
@@ -601,8 +710,8 @@ void findDuplicates(ENTRY *scope){
         printf("%d variable(s) duplicated\n", res);
         exit(12);
     }
-
 }
+
 
 ENTRY *append(ENTRY *a, ENTRY *b) {
     if (b!= NULL)
@@ -621,7 +730,7 @@ ENTRY *append(ENTRY *a, ENTRY *b) {
             printf("Var was null\n");
             a = b->ext.parList;
         }
-        printf("appended seccessfully\n");
+        printf("appended successfully\n");
     }
     else{
         printf("Nothing to append\n");

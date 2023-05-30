@@ -4,6 +4,7 @@
 
 #ifndef SCANNER_L_PRINTOUT_H
 #define SCANNER_L_PRINTOUT_H
+
 #include "ast.h"
 #include "parser_yacc.tab.h"
 #include <stdio.h>
@@ -19,6 +20,7 @@ int indentLevel;
 ENTRY *globalVars;
 ENTRY *localVars;
 ENTRY *res;
+ENTRY *funcs;
 _DATA_TYPE returnType;
 
 FILE *f;
@@ -44,5 +46,11 @@ void cleanSymTable(ENTRY* symTab);
 ENTRY* variableLookup(char* name);
 void findDuplicates(ENTRY *scope);
 void printScope();
+ENTRY *constructMain();
+ENTRY *funLookup(char* name);
 ENTRY *append(ENTRY* a, ENTRY*b);
+void checkParameters(ENTRY* fun, N_EXPR* pars);
+ENTRY* extractParams(ENTRY* params);
+
+
 #endif //SCANNER_L_PRINTOUT_H
