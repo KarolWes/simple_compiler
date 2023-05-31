@@ -6,6 +6,8 @@
 #include <string.h>
 #include "parser_functions.h"
 
+char* inFun = "";
+
 void startFun(char* id, ENTRY* vars){
     funcs = constructMain();
     res = (ENTRY*)malloc(sizeof(struct tENTRY));
@@ -106,6 +108,7 @@ N_PROG *subProgListFun(ENTRY *header, ENTRY *vars) {
 ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
     ENTRY *check = funLookup(id);
     if(check == NULL){
+        inFun = id;
         ENTRY *func = (ENTRY*) malloc(sizeof (struct tENTRY));
         func->typ = _CALL;
         func->dataType = type;
@@ -213,24 +216,39 @@ N_EXPR *identifiers(char* name, N_EXPR *extension, int type){
     {
         N_CALL * call = malloc(sizeof(struct tN_CALL));
         call->id = name;
+        ENTRY *ans = funLookup(name);
+        if(ans == NULL){
+            printf("Error: function '%s' not declared\n", name);
+            exit(13);
+        }
         call->par_list = extension;
         expr->typ = FUNC_CALL;
         expr->description.func_call = call;
+        expr->dataType = ans->dataType;
     }
     else{
         expr->typ = VAR_REF;
         N_VAR_REF * var = malloc(sizeof(struct tN_VAR_REF));
+        if(strcmp(name, inFun) == 0){
+            name = "result";
+        }
         var->id = name;
+        ENTRY *ans = variableLookup(name);
+        if(ans == NULL){
+            printf("Error: variable '%s' not declared\n", name);
+            exit(13);
+        }
         if(type == 1) //array
         {
+            checkIndex(extension, ans);
             var->index = extension;
         }
         else{
             var->index = NULL;
         }
         expr->description.var_ref = var;
+        expr->dataType = ans->dataType;
     }
-    expr->dataType = _VOID;
     expr->parenthesis = 0;
     expr->next = NULL;
     return expr;
@@ -244,6 +262,46 @@ N_ASSIGN *assingmentFun(char* name, N_EXPR *index, N_EXPR *rhs){
     assign->var_ref = var;
     assign->rhs_expr = rhs;
     return assign;
+}
+void checkIndex(N_EXPR *index, ENTRY *def){
+    if (index->typ == CONSTANT) {
+
+        if (strcmp(index->description.constant, "true") == 0 ||
+        strcmp(index->description.constant, "false") == 0) {
+            printf("Illegal array subscription: Boolean\n");
+            exit(13);
+        } else {
+            float num = atof(index->description.constant);
+            int decimal = (int) (num * 10000) % 10000;
+            if (decimal != 0) {
+                printf("Illegal array subscription: Float\n");
+                exit(13);
+            } else {
+                int num_i = (int) (num);
+                if (num_i < def->ext.bounds.low || num_i > def->ext.bounds.high) {
+                    printf("Illegal array subscription: Index out of bound");
+                    exit(13);
+                }
+            }
+        }
+    }
+    if (index->typ == VAR_REF) {
+        ENTRY *e = variableLookup(index->description.var_ref->id);
+        if (e->dataType != _INT) {
+            printf("Illegal array subscription: Variable is not int\n");
+            exit(13);
+        }
+    }
+    if (index->typ == FUNC_CALL) {
+        ENTRY *e = funLookup(index->description.var_ref->id);
+        if (e->dataType != _INT) {
+            printf("Illegal array subscription: Function is not int\n");
+            exit(13);
+        }
+    }
+    if(index->typ == OP){
+        //TODO: NOT YET IMPLEMENTED
+    }
 }
 
 void findDuplicates(ENTRY *scope){

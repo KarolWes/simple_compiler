@@ -5,7 +5,6 @@
 
 
 _DATA_TYPE mainType = _INT;
-char* inFun = "";
 char* mainDef = "int main(int argc, char *argv[])";
 int indentLevel = 0;
 _DATA_TYPE returnType = 0;
@@ -68,70 +67,15 @@ void printVarRef(N_VAR_REF *input) {
     if(input == NULL){
         return;
     }
-    ENTRY* ans;
-    if(strcmp(input->id, inFun) == 0){
-        ans = variableLookup("result");
-    }else{
-        ans = variableLookup(input->id);
-    }
-    if (ans == NULL)
-    {
-        printf("Variable '%s' referenced without declaration\n", input->id);
-        exit(12);
-    }
-    if(strcmp(input->id, inFun) == 0){
-        printf("result");
-        fprintf(f, "result");
-    }
-    else {
-        printf("%s", input->id);
-        fprintf(f, "%s", input->id);
-        if (input->index != NULL) {
-            printf("[");
-            fprintf(f, "[");
-            N_EXPR* i = input->index;
-            if(i->typ == CONSTANT){
-                printf("\t\t\t%s\n", input->index->description.constant);
-                printf("\t\t\t%d\n", ans->ext.bounds.low);
-                printf("\t\t\t%d\n", ans->ext.bounds.high);
-                if(strcmp(i->description.constant, "true") == 0 || strcmp(i->description.constant, "false") == 0 ){
-                    printf("Illegal array subscription: Boolean\n");
-                    exit(13);
-                }
-                else{
-                    float num = atof(i->description.constant);
-                    int decimal = (int)(num*10000)%10000;
-                    if(decimal != 0){
-                        printf("Illegal array subscription: Float\n");
-                        exit(13);
-                    }
-                    else{
-                        int num_i = (int)(num);
-                        if(num_i < ans->ext.bounds.low || num_i > ans->ext.bounds.high){
-                            printf("Illegal array subscription: Index out of bound");
-                            exit(13);
-                        }
-                    }
-                }
-            }
-            if(i->typ == VAR_REF){
-                ENTRY *e = variableLookup(i->description.var_ref->id);
-                if(e->dataType != _INT){
-                    printf("Illegal array subscription: Variable is not int\n");
-                    exit(13);
-                }
-            }
-            if(i->typ == FUNC_CALL){
-                ENTRY *e = funLookup(i->description.var_ref->id);
-                if(e->dataType != _INT){
-                    printf("Illegal array subscription: Function is not int\n");
-                    exit(13);
-                }
-            }
-            printExpr(i, "");
-            printf("]");
-            fprintf(f, "]");
-        }
+    printf("%s", input->id);
+    fprintf(f, "%s", input->id);
+    if (input->index != NULL) {
+        printf("[");
+        fprintf(f, "[");
+        N_EXPR *i = input->index;
+        printExpr(i, "");
+        printf("]");
+        fprintf(f, "]");
     }
     free(input);
 }
@@ -220,11 +164,9 @@ void printExprInner(N_EXPR *input, char* separator) {
             break;
         case VAR_REF:
             printVarRef(input->description.var_ref);
-            input->dataType = variableLookup(input->description.var_ref->id)->dataType;
             break;
         case FUNC_CALL:
             printCall(input->description.func_call, separator, 1);
-            input->dataType = funLookup(input->description.func_call->id)->dataType;
             break;
         case OP:
             printOp(input);
@@ -359,17 +301,6 @@ void printEntry(ENTRY *input) {
             case _CONST:
                 break;
             case _VAR:
-                printf("\t\tFUN: %s\n", inFun);
-                if(strcmp(input->id, inFun) == 0){
-                    check = variableLookup("result");
-                }else{
-                    check = variableLookup(input->id);
-                }
-                if (check == NULL)
-                {
-                    printf("Variable '%s' referenced without declaration\n", input->id);
-                    exit(12);
-                }
                 printf("%s ", typeToStr(input->dataType));
                 fprintf(f, "%s ", typeToStr(input->dataType));
                 printf("%s;\n",input->id);
@@ -387,7 +318,6 @@ void printEntry(ENTRY *input) {
                 if (input->dataType == _MAIN){
                     printf("\n\t/* program: '%s' */\n\n\n", input->id);
                     fprintf(f, "\n\t/* program: '%s' */\n\n\n", input->id);
-                    inFun = "main";
                 }
                 returnType = input->dataType;
                 if (input->dataType == _MAIN){
@@ -395,7 +325,6 @@ void printEntry(ENTRY *input) {
                     fprintf(f, "%s\n", mainDef);
                 }
                 else{
-                    inFun = input->id;
                     printf("%s ", typeToStr(input->dataType));
                     fprintf(f, "%s ", typeToStr(input->dataType));
                     printf("%s(", input->id);
@@ -404,45 +333,11 @@ void printEntry(ENTRY *input) {
                 }
                 return;
             case _CALL:
-                check = funcs;
-                if(funcs == NULL){
-                    funcs = input;
-                }
-                else{
-                    printf("Checking next\n");
-                    while(check->next != NULL){
-                        check = check->next;
-                        printf("NEXT!");
-                    }
-                    check->next = input;
-                    check = check->next;
-                    check->next = NULL;
-                }
-                findDuplicates(globalVars);
-                inFun = input->id;
-                printf("\t%s\n", inFun);
                 returnType = input->dataType;
                 printf("%s ", typeToStr(input->dataType));
                 fprintf(f, "%s ", typeToStr(input->dataType));
                 printf("%s(",input->id);
                 fprintf(f, "%s(",input->id);
-                printf("In call:\n");
-                if(input->ext.parList != NULL){
-                    printf("There is something to be added\n");
-                    printScope();
-                    ENTRY *vars = localVars;
-                    if(vars == NULL){
-                        localVars = extractParams(input->ext.parList);
-                    }
-                    else{
-                        printf("Trying to go to next\n");
-                        while(vars->next!= NULL){
-                            printf("NEXT!\n");
-                            vars = vars->next;
-                        }
-                        vars->next = extractParams(input->ext.parList);
-                    }
-                }
                 printArgs(input->ext.parList);
                 printf(")\n");
                 fprintf(f, ")\n");
@@ -502,13 +397,7 @@ void printArgs(ENTRY *input) {
 void printProgramBase(N_PROG *input, int set_global) {
     N_PROG* main;
     while( input != NULL){
-        localVars = NULL;
-        res->next = NULL;
         printf("Local variables should be flushed\n");
-        if(input->entry->dataType != _VOID){
-            res->typ = input->entry->dataType;
-            localVars = res;
-        }
         if(input->entry->dataType == _MAIN){
             printf("Type is main. Global: %d\n", set_global);
             main = input;
@@ -576,7 +465,6 @@ void printProgram(N_PROG *input, int set_global) {
         printIndent();
         printf("}\n");
         fprintf(f, "}\n");
-        inFun = "";
 //        free(input->entry);
 //        free(input->entry->ext.parList);
         //cleanSymTable(vars);

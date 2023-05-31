@@ -49,7 +49,7 @@ extern int yylineno;
 %%
 start		: PROGRAM ID SEMICOLON varDec 	{ fprintf(stdout, "Starting\n"); startFun($2, $4); }
 		subProgList 			{ ast->stmt = $6; }
-		compStmt DOT			{ ast->next = $8; }
+		compStmt DOT			{ ast->next = $8; printf("FINISHED\n");}
 		;
 varDec		:			{ $$ = NULL; }
 		| VAR varDecList	{ $$ = $2; }

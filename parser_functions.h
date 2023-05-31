@@ -14,6 +14,7 @@ ENTRY *globalVars;
 ENTRY *localVars;
 ENTRY *res;
 ENTRY *funcs;
+char* inFun;
 _DATA_TYPE returnType;
 _DATA_TYPE exprType;
 
@@ -37,5 +38,6 @@ ENTRY *funLookup(char* name);
 void printScope();
 ENTRY *constructMain();
 ENTRY* append(ENTRY* node, ENTRY* goal);
+void checkIndex(N_EXPR *index, ENTRY *def);
 
 #endif //SCANNER_L_PARSER_FUNCTIONS_H

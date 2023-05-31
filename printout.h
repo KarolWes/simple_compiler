@@ -15,7 +15,6 @@ extern int yyparse();
 extern N_PROG *ast;
 
 _DATA_TYPE mainType;
-char* inFun;
 char* mainDef;
 int indentLevel;
 
