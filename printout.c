@@ -1,7 +1,6 @@
 //
 // Created by Karol on 11.05.2023.
 //
-#include <stdlib.h>
 #include "printout.h"
 
 
@@ -10,6 +9,7 @@ char* inFun = "";
 char* mainDef = "int main(int argc, char *argv[])";
 int indentLevel = 0;
 _DATA_TYPE returnType = 0;
+_DATA_TYPE exprType = _VOID;
 
 
 char *typeToStr(_DATA_TYPE type) {
@@ -91,13 +91,40 @@ void printVarRef(N_VAR_REF *input) {
             fprintf(f, "[");
             N_EXPR* i = input->index;
             if(i->typ == CONSTANT){
-                printf("Illegal array subscription: Boolean\n");
-                exit(13);
+                printf("\t\t\t%s\n", input->index->description.constant);
+                printf("\t\t\t%d\n", ans->ext.bounds.low);
+                printf("\t\t\t%d\n", ans->ext.bounds.high);
+                if(strcmp(i->description.constant, "true") == 0 || strcmp(i->description.constant, "false") == 0 ){
+                    printf("Illegal array subscription: Boolean\n");
+                    exit(13);
+                }
+                else{
+                    float num = atof(i->description.constant);
+                    int decimal = (int)(num*10000)%10000;
+                    if(decimal != 0){
+                        printf("Illegal array subscription: Float\n");
+                        exit(13);
+                    }
+                    else{
+                        int num_i = (int)(num);
+                        if(num_i < ans->ext.bounds.low || num_i > ans->ext.bounds.high){
+                            printf("Illegal array subscription: Index out of bound");
+                            exit(13);
+                        }
+                    }
+                }
             }
             if(i->typ == VAR_REF){
                 ENTRY *e = variableLookup(i->description.var_ref->id);
                 if(e->dataType != _INT){
-                    printf("Illegal array subscription\n");
+                    printf("Illegal array subscription: Variable is not int\n");
+                    exit(13);
+                }
+            }
+            if(i->typ == FUNC_CALL){
+                ENTRY *e = funLookup(i->description.var_ref->id);
+                if(e->dataType != _INT){
+                    printf("Illegal array subscription: Function is not int\n");
                     exit(13);
                 }
             }
@@ -166,32 +193,38 @@ void printExpr(N_EXPR *input, char* separator) {
 }
 
 void printExprInner(N_EXPR *input, char* separator) {
-
     float num;
-    ENTRY *ans = NULL;
     if(input->parenthesis == 1){
         printf("(");
         fprintf(f, "(");
     }
     switch (input->typ) {
         case CONSTANT:
-            num = atof(input->description.constant);
-            int tmp = (int)(num * 10000);
-            if (tmp % 10000 == 0){
-                tmp  = (int) num;
-                printf("%d", tmp);
-                fprintf(f, "%d", tmp);
+            if(strcmp(input->description.constant, "true") == 0 || strcmp(input->description.constant, "false") == 0 ){
+                printf("%s", input->description.constant);
+                fprintf(f, "%s", input->description.constant);
             }
             else{
-                printf("%f", num);
-                fprintf(f, "%f", num);
+                num = atof(input->description.constant);
+                int tmp = (int)(num * 10000);
+                if (tmp % 10000 == 0){
+                    tmp  = (int) num;
+                    printf("%d", tmp);
+                    fprintf(f, "%d", tmp);
+                }
+                else{
+                    printf("%f", num);
+                    fprintf(f, "%f", num);
+                }
             }
             break;
         case VAR_REF:
             printVarRef(input->description.var_ref);
+            input->dataType = variableLookup(input->description.var_ref->id)->dataType;
             break;
         case FUNC_CALL:
             printCall(input->description.func_call, separator, 1);
+            input->dataType = funLookup(input->description.func_call->id)->dataType;
             break;
         case OP:
             printOp(input);
@@ -201,7 +234,6 @@ void printExprInner(N_EXPR *input, char* separator) {
         printf(")");
         fprintf(f,")");
     }
-
 }
 
 void printOp(N_EXPR  *input){
@@ -236,6 +268,7 @@ void printAssign(N_ASSIGN *input, int ignore_indent) {
         printIndent();
     }
     printVarRef(input->var_ref);
+    _DATA_TYPE lhsType = variableLookup(input->var_ref->id)->dataType;
     printf(" = ");
     fprintf(f, " = ");
     printExpr(input->rhs_expr, "");
@@ -464,18 +497,9 @@ void printArgs(ENTRY *input) {
         input = input->next;
     }
 }
-ENTRY *constructMain(){
-    ENTRY *f = (ENTRY*) malloc(sizeof (struct tENTRY));
-    f->typ = _CALL;
-    f->id = "main";
-    f->dataType = _MAIN;
-    f->ext.parList = NULL;
-    f->next = NULL;
-    return f;
-}
+
 
 void printProgramBase(N_PROG *input, int set_global) {
-    funcs = constructMain();
     N_PROG* main;
     while( input != NULL){
         localVars = NULL;
@@ -493,16 +517,11 @@ void printProgramBase(N_PROG *input, int set_global) {
                 printf("\t/* Global variables */\n");
                 fprintf(f, "\t/* Global variables */\n");
                 ENTRY* vars = main->entry->next;
-                globalVars = vars;
-                findDuplicates(vars);
                 if (vars != NULL){
                     printEntry(vars);
                 }
                 printf("\n");
                 fprintf(f, "\n");
-            }
-            else{
-                globalVars = NULL;
             }
         }
         if(input != NULL){
@@ -515,7 +534,6 @@ void printProgramBase(N_PROG *input, int set_global) {
         fprintf(f, "\n");
     }
     printProgram(main, set_global);
-    globalVars = NULL;
 //    free(main);
 }
 
@@ -531,26 +549,9 @@ void printProgram(N_PROG *input, int set_global) {
         indentLevel+=1;
         if(returnType != _MAIN || set_global != 1){
             printf("Trying to add variables\n");
-            printScope();
-            ENTRY *tmp = localVars;
-            if(localVars == NULL){
-                localVars = vars;
-            }
-            else{
-                printf("Checking next\n");
-                while(tmp->next != NULL){
-                    tmp = tmp->next;
-                    printf("NEXT!");
-                }
-                tmp->next = vars;
-            }
-            findDuplicates(localVars);
             if (vars != NULL){
                 printEntry(vars);
             }
-        }
-        else{
-            localVars = NULL;
         }
         if(returnType != _VOID && returnType != _MAIN){
             printIndent();
@@ -576,7 +577,6 @@ void printProgram(N_PROG *input, int set_global) {
         printf("}\n");
         fprintf(f, "}\n");
         inFun = "";
-        localVars = NULL;
 //        free(input->entry);
 //        free(input->entry->ext.parList);
         //cleanSymTable(vars);
@@ -591,10 +591,6 @@ void printIndent() {
 }
 
 void run(int set_global) {
-    res = (ENTRY*)malloc(sizeof(struct tENTRY));
-    res->id = "result";
-    res->next = NULL;
-
     if(set_global != 1 && set_global != 0){
         printf("Unavailable value. Try 1 or 0");
         exit(3);
@@ -622,97 +618,6 @@ void cleanSymTable(ENTRY *symTab) {
     }
 }
 
-void printScope(){
-    printf("\tSCOPE\n");
-    ENTRY *current = globalVars;
-    while (current != NULL){
-        printf("\tglobal: %s\n", current->id);
-        current = current->next;
-    }
-    current = funcs;
-    while (current != NULL){
-        printf("\tfunctions: %s\n", current->id);
-        current = current->next;
-    }
-    current = localVars;
-    while (current != NULL){
-        printf("\tlocal: %s\n", current->id);
-        current = current->next;
-    }
-}
-
-ENTRY* variableLookup(char* name){
-    printScope();
-    printf("in Lookup; goal -> %s\n", name);
-    ENTRY *output = NULL;
-    ENTRY *current = globalVars;
-    while(current != NULL){
-        printf("%s\n", current->id);
-        if(strcmp(current->id, name) == 0){
-            output = current;
-            break;
-        }
-        current = current->next;
-    }
-    current = localVars;
-    printf("locals:\n");
-    while(current != NULL){
-        printf("%s\n", current->id);
-        if(strcmp(current->id, name) == 0){
-            output = current;
-            break;
-        }
-        current = current->next;
-    }
-    return output;
-}
-
-ENTRY *funLookup(char* name){
-    printf("in Lookup; goal -> %s\n", name);
-    ENTRY *output = NULL;
-    ENTRY *current = funcs;
-    while(current != NULL){
-        printf("%s\n", current->id);
-        if(strcmp(current->id, name) == 0){
-            output = current;
-            break;
-        }
-        current = current->next;
-    }
-    return output;
-}
-
-void findDuplicates(ENTRY *scope){
-    printScope();
-    int res = 0;
-    ENTRY *current = scope;
-    ENTRY *next;
-    while(current != NULL){
-        next = current->next;
-        while(next != NULL){
-            if (strcmp(current->id, next->id) == 0){
-                printf("Redeclaration of variable/function '%s' within one scope\n", current->id);
-                res += 1;
-            }
-            next = next->next;
-        }
-        next = funcs;
-        while(next != NULL){
-            if (strcmp(current->id, next->id) == 0){
-                printf("Redeclaration of variable/function '%s' within one scope\n", current->id);
-                res += 1;
-            }
-            next = next->next;
-        }
-        current = current->next;
-    }
-    if(res != 0){
-        printf("%d variable(s) duplicated\n", res);
-        exit(12);
-    }
-}
-
-
 ENTRY *append(ENTRY *a, ENTRY *b) {
     if (b!= NULL)
     {
@@ -737,4 +642,3 @@ ENTRY *append(ENTRY *a, ENTRY *b) {
     }
     return a;
 }
-

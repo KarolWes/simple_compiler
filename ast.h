@@ -34,6 +34,7 @@ typedef struct tN_VAR_REF {
 
 typedef struct tN_EXPR {
     enum { CONSTANT=0, VAR_REF, OP, FUNC_CALL } typ;
+    _DATA_TYPE dataType;
     union uExprDesc{
         char* constant; /* string value of the constant */
         N_VAR_REF *var_ref; /* reference to a variable */

@@ -47,7 +47,9 @@ extern int yylineno;
 %start  start
 
 %%
-start		: PROGRAM ID SEMICOLON varDec subProgList compStmt DOT	{ startFun($2, $4, $5, $6); }
+start		: PROGRAM ID SEMICOLON varDec 	{ fprintf(stdout, "Starting\n"); startFun($2, $4); }
+		subProgList 			{ ast->stmt = $6; }
+		compStmt DOT			{ ast->next = $8; }
 		;
 varDec		:			{ $$ = NULL; }
 		| VAR varDecList	{ $$ = $2; }
@@ -60,7 +62,7 @@ identListType	: identList COLON type {$$ = intentListTypeFun($1, $3); }
 identList	: ID COMA identList	{ $$ = idListFun($1, $3); }
 		| ID			{ $$ = idListFun($1, NULL); }
 		;
-type		: simpleType							{ $$ = simpleTypeFun($1, 0,0,0); }
+type		: simpleType							{ $$ = simpleTypeFun($1, 0,0,1); }
 		| ARRAY BRAC_OPEN NUM RANGE NUM BRAC_CLOSE OF simpleType	{ $$ = simpleTypeFun($8, 1, $3, $5); }
 		;
 simpleType	: INTEGER	{$$ = _INT;}
@@ -68,12 +70,13 @@ simpleType	: INTEGER	{$$ = _INT;}
 		| BOOLEAN	{$$ = _BOOL;}
 		;
 subProgList	:	{$$ = NULL; }
-		|  subProgHead varDec compStmt SEMICOLON subProgList { $$ = subProgListFun($1, $2, $3, $5); }
+		|  subProgHead varDec { $<prog>$ = subProgListFun($1, $2); }
+		compStmt SEMICOLON subProgList { $$->stmt = $4; $$->next = $6; }
 		;
 subProgHead	: FUNCTION ID args COLON simpleType SEMICOLON		{ $$ = subHeaderFun($5, $2, $3); }
 		| PROCEDURE ID args SEMICOLON				{ $$ = subHeaderFun(_VOID, $2, $3); }
 		;
-args		:					{ $$ = NULL; };
+args		: PARENTH_OPEN PARENTH_CLOSE	{ $$ = NULL; };
 		| PARENTH_OPEN parList PARENTH_CLOSE	{ $$ = $2; }
 		;
 parList		: identListType SEMICOLON parList	{ $$ = parListFun($1, $3); }
@@ -196,8 +199,9 @@ mulOp		: MULTI		{$$ = MULTI_OP;}
 %%
 
 void yyerror(char *s) {
-	fprintf(stderr, "%s\n", s);
+	printf("%s\n", s);
 	printf("error in line %d\n", yylineno);
 }
+int main() { return yyparse(); }
 
 

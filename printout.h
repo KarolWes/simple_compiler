@@ -9,6 +9,7 @@
 #include "parser_yacc.tab.h"
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 extern int yyparse();
 extern N_PROG *ast;
@@ -17,11 +18,7 @@ _DATA_TYPE mainType;
 char* inFun;
 char* mainDef;
 int indentLevel;
-ENTRY *globalVars;
-ENTRY *localVars;
-ENTRY *res;
-ENTRY *funcs;
-_DATA_TYPE returnType;
+
 
 FILE *f;
 
@@ -43,11 +40,7 @@ void printOp(N_EXPR *input);
 void printExprInner(N_EXPR *input, char* separator);
 void run(int set_global);
 void cleanSymTable(ENTRY* symTab);
-ENTRY* variableLookup(char* name);
-void findDuplicates(ENTRY *scope);
-void printScope();
-ENTRY *constructMain();
-ENTRY *funLookup(char* name);
+
 ENTRY *append(ENTRY* a, ENTRY*b);
 void checkParameters(ENTRY* fun, N_EXPR* pars);
 ENTRY* extractParams(ENTRY* params);
