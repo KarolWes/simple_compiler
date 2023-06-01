@@ -8,7 +8,7 @@ int main(int argc, char *argv[]) {
     if(argc != 2)
     {
         printf("running\n");
-        run(0);
+        run(1);
     }
     else{
         printf("running\n");

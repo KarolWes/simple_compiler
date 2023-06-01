@@ -24,6 +24,7 @@ FILE *f;
 void printIndent();
 char * typeToStr(_DATA_TYPE type);
 char *operatorToStr(_OPERATOR o);
+
 void printVarRef(N_VAR_REF *input);
 void printIf(N_IF *input, int ignore_indent);
 void printWhile(N_WHILE *input, int ignore_indent);
@@ -37,12 +38,11 @@ void printProgram(N_PROG *input, int set_global);
 void printArgs(ENTRY *input);
 void printOp(N_EXPR *input);
 void printExprInner(N_EXPR *input, char* separator);
-void run(int set_global);
+
 void cleanSymTable(ENTRY* symTab);
 
-ENTRY *append(ENTRY* a, ENTRY*b);
-void checkParameters(ENTRY* fun, N_EXPR* pars);
-ENTRY* extractParams(ENTRY* params);
 
+
+void run(int set_global);
 
 #endif //SCANNER_L_PRINTOUT_H

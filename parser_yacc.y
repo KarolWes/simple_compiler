@@ -47,9 +47,16 @@ extern int yylineno;
 %start  start
 
 %%
-start		: PROGRAM ID SEMICOLON varDec 	{ fprintf(stdout, "Starting\n"); startFun($2, $4); }
-		subProgList 			{ ast->stmt = $6; }
-		compStmt DOT			{ ast->next = $8; printf("FINISHED\n");}
+start		: PROGRAM ID SEMICOLON varDec 	{ ast = (N_PROG*) malloc(sizeof (struct tN_PROG)); fprintf(stdout, "Starting\n"); startFun($2, $4); }
+		subProgList 			{
+						ast->next = $6;
+						printf("subs -> %d\n", ast->next);
+						localVars = NULL;
+						}
+		compStmt DOT			{
+						ast->stmt = $8;
+						printf("body -> %d\n", ast->stmt);
+						printf("FINISHED\n");}
 		;
 varDec		:			{ $$ = NULL; }
 		| VAR varDecList	{ $$ = $2; }
@@ -71,7 +78,7 @@ simpleType	: INTEGER	{$$ = _INT;}
 		;
 subProgList	:	{$$ = NULL; }
 		|  subProgHead varDec { $<prog>$ = subProgListFun($1, $2); }
-		compStmt SEMICOLON subProgList { $$->stmt = $4; $$->next = $6; }
+		compStmt SEMICOLON subProgList { $$ = $<prog>$; $$->stmt = $4; $$->next = $6; }
 		;
 subProgHead	: FUNCTION ID args COLON simpleType SEMICOLON		{ $$ = subHeaderFun($5, $2, $3); }
 		| PROCEDURE ID args SEMICOLON				{ $$ = subHeaderFun(_VOID, $2, $3); }
@@ -94,12 +101,14 @@ stmt		: procCall	{
                                     	N_STMT * stmt = malloc(sizeof(struct tN_STMT));
 					stmt->typ = _PROC_CALL;
 					stmt->node.proc_call = $1;
+					stmt->next = NULL;
 					$$ = stmt;
                                 }
 		| assignStmt	{
                                     	N_STMT * stmt = malloc(sizeof(struct tN_STMT));
 					stmt->typ = _ASSIGN;
 					stmt->node.assign_stmt = $1;
+					stmt->next = NULL;
 					$$ = stmt;
                                 }
 		| compStmt 	{ $$ = $1; }
@@ -107,27 +116,24 @@ stmt		: procCall	{
                                     	N_STMT * stmt = malloc(sizeof(struct tN_STMT));
 					stmt->typ = _IF;
 					stmt->node.if_stmt = $1;
+					stmt->next = NULL;
 					$$ = stmt;
                                 }
 		| whileStmt	{
                                     	N_STMT * stmt = malloc(sizeof(struct tN_STMT));
 					stmt->typ = _WHILE;
 					stmt->node.while_stmt = $1;
+					stmt->next = NULL;
 					$$ = stmt;
 				}
 		;
-procCall	: ID params	{
-                                    N_CALL* call = malloc(sizeof (struct tN_CALL));
-                                    call->id = $1;
-                                    call->par_list = $2;
-                                    $$ = call;
-                                }
+procCall	: ID params	{ $$ = procCallFun($1, $2); }
 		;
 params		: PARENTH_OPEN exprList PARENTH_CLOSE 	{$$ = $2;}
 		| PARENTH_OPEN PARENTH_CLOSE		{$$ = NULL;}
 		;
-assignStmt	: ID ASSIGN expr		{ $$ = assingmentFun($1, NULL, $3);}
-		| ID index ASSIGN expr		{ $$ = assingmentFun($1, $2, $4); }
+assignStmt	: ID ASSIGN expr		{ $$ = assignmentFun($1, NULL, $3);}
+		| ID index ASSIGN expr		{ $$ = assignmentFun($1, $2, $4); }
 		;
 index		: BRAC_OPEN expr BRAC_CLOSE		{$$ = $2;}
 		| BRAC_OPEN expr RANGE expr BRAC_CLOSE	{
@@ -137,6 +143,10 @@ index		: BRAC_OPEN expr BRAC_CLOSE		{$$ = $2;}
 		;
 ifStmt		: IF expr THEN stmt elsePart	{
                                                     N_IF *i = malloc(sizeof (struct tN_IF));
+                                                    if($2->dataType != _BOOL){
+                                                    	printf("Error in line %d: condition is not bool\n", yylineno);
+                                                    	exit(16);
+                                                    }
                                                     i->expr = $2;
                                                     i->then_part = $4;
                                                     i->else_part = $5;
@@ -148,6 +158,10 @@ elsePart	:			{$$ = NULL;}
 		;
 whileStmt	: WHILE expr DO stmt	{
 					    $$ = malloc(sizeof(struct tN_WHILE));
+					    if($2->dataType != _BOOL){
+						printf("Error in line %d: condition is not bool\n", yylineno);
+						exit(16);
+					    }
                                             $$->expr = $2;
                                             $$->stmt = $4;
 					}
@@ -202,6 +216,6 @@ void yyerror(char *s) {
 	printf("%s\n", s);
 	printf("error in line %d\n", yylineno);
 }
-int main() { return yyparse(); }
+//int main() { return yyparse(); }
 
 

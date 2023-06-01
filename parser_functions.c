@@ -8,6 +8,8 @@
 
 char* inFun = "";
 
+/* parsing functions */
+
 void startFun(char* id, ENTRY* vars){
     funcs = constructMain();
     res = (ENTRY*)malloc(sizeof(struct tENTRY));
@@ -16,7 +18,6 @@ void startFun(char* id, ENTRY* vars){
     res->next = NULL;
     globalVars = vars;
     findDuplicates(globalVars);
-    ast = (N_PROG*) malloc(sizeof (struct tN_PROG));
     ENTRY * entry = (ENTRY*) malloc(sizeof (struct tENTRY));
     entry->typ = _PROG;
     entry->dataType = _MAIN;
@@ -65,18 +66,21 @@ ENTRY *simpleTypeFun(_DATA_TYPE type, int array, float lower, float upper) {
         output->typ = _ARRAY;
         int new_lower = (int)(lower*10000);
         if(new_lower%10000 != 0){
-            yyerror("Error: array bound must be an int\n");
+            printf("Error in line %d: array bound must be an int\n", yylineno);
+            free(output);
             exit(11);
         }
         new_lower = (int)(lower);
         int new_upper = (int)(upper*10000);
         if(new_upper%10000 != 0){
-            yyerror("Error: array bound must be an int\n");
+            printf("Error in line %d: array bound must be an int\n", yylineno);
+            free(output);
             exit(11);
         }
         new_upper = (int)(upper);
         if(new_lower > new_upper){
-            yyerror("Error: array declaration with second index lower than the first\n");
+            printf("Error in line %d: array declaration with second index lower than the first\n", yylineno);
+            free(output);
             exit(11);
         }
         printf("\t%d\t%d\n", new_lower, new_upper);
@@ -114,11 +118,11 @@ ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
         func->dataType = type;
         if(type != _VOID){
             res->dataType = type;
-            res->next = params;
+            res->next = extractParams(params);
             localVars = res;
         }
         else{
-            localVars = params;
+            localVars = extractParams(params);
         }
         func->id = id;
         func->ext.parList = params;
@@ -134,7 +138,7 @@ ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
         return func;
     }
     else{
-        printf("Error: function '%s' already declared\n", id);
+        printf("Error in line %d: redeclaration of function '%s'\n", yylineno, id);
         exit(14);
     }
 }
@@ -168,11 +172,78 @@ ENTRY *parListFun(ENTRY *first, ENTRY *tail){
 }
 N_EXPR *simpleExprFun(N_EXPR* left, _OPERATOR op, N_EXPR *right){
     if(left == NULL){
-        printf("Error: Empty expression\n");
+        printf("Error in line %d: Empty expression\n", yylineno);
         exit(101);
     }
     N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
     expr->typ = OP;
+    if (op == NOT_OP || op == AND_OP || op == OR_OP){
+        if(left->dataType != _BOOL || right -> dataType != _BOOL){
+            printf("Error in line %d: Logical operator not declared for given data type\n", yylineno);
+            free(expr);
+            exit(19);
+        }
+        expr->dataType = _BOOL;
+    }
+    else if(op == NEQ_OP || op == GEQ_OP || op == LEQ_OP ||
+            op == GT_OP || op == LT_OP || op == EQ_OP){
+        if(((right->dataType == _INT || right->dataType == _REAL) &&
+            (left->dataType == _INT || left->dataType == _REAL))||
+            (right->dataType == _BOOL && left->dataType == _BOOL)){
+            expr->dataType = _BOOL;
+        }
+        else{
+            printf("Error in line %d: Relation operator not declared for given data type\n", yylineno);
+            free(expr);
+            exit(19);
+        }
+    }
+    else if (op == DIV_OP){
+        if((left->dataType == _INT || left->dataType == _REAL) && right->dataType == _INT){
+            expr->dataType = _INT;
+        }
+        else{
+            printf("Error in line %d: DIV operator not declared for given data type\n", yylineno);
+            free(expr);
+            exit(19);
+        }
+    }
+    else if(op == MOD_OP){
+        if(left->dataType == _INT && right->dataType == _INT){
+            expr->dataType = _INT;
+        }
+        else{
+            printf("Error in line %d: Modulo operator not declared for given data type\n", yylineno);
+            free(expr);
+            exit(19);
+        }
+    }
+    else if(op == SLASH_OP){
+        if((right->dataType == _INT || right->dataType == _REAL) &&
+            (left->dataType == _INT || left->dataType == _REAL)){
+            expr->dataType = _REAL;
+        }
+        else{
+            printf("Error in line %d: Division operator not declared for given data type\n", yylineno);
+            free(expr);
+            exit(19);
+        }
+    }
+    else{
+        if((right->dataType == _INT || right->dataType == _REAL) &&
+           (left->dataType == _INT || left->dataType == _REAL)){
+            if(right->dataType == _REAL || left->dataType == _REAL){
+                expr->dataType = _REAL;
+            }else{
+                expr->dataType = _INT;
+            }
+        }
+        else{
+            printf("Error in line %d: Math operator not declared for given data type\n", yylineno);
+            free(expr);
+            exit(19);
+        }
+    }
     expr->description.operation.expr = left;
     expr->description.operation.op = op;
     expr->description.operation.expr->next = right;
@@ -185,7 +256,7 @@ N_EXPR *booleans(char* val){
     N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
     expr->typ = CONSTANT;
     expr->dataType = _BOOL;
-    expr->description.constant = "false";
+    expr->description.constant = val;
     expr->parenthesis = 0;
     expr->next = NULL;
     return expr;
@@ -218,10 +289,12 @@ N_EXPR *identifiers(char* name, N_EXPR *extension, int type){
         call->id = name;
         ENTRY *ans = funLookup(name);
         if(ans == NULL){
-            printf("Error: function '%s' not declared\n", name);
-            exit(13);
+            printf("Error in line %d: function '%s' referenced without declaration\n", yylineno, name);
+            free(expr);
+            exit(14);
         }
         call->par_list = extension;
+        checkParameters(ans, extension);
         expr->typ = FUNC_CALL;
         expr->description.func_call = call;
         expr->dataType = ans->dataType;
@@ -235,7 +308,8 @@ N_EXPR *identifiers(char* name, N_EXPR *extension, int type){
         var->id = name;
         ENTRY *ans = variableLookup(name);
         if(ans == NULL){
-            printf("Error: variable '%s' not declared\n", name);
+            printf("Error in line %d: variable '%s' referenced without declaration\n", yylineno, name);
+            free(expr);
             exit(13);
         }
         if(type == 1) //array
@@ -254,33 +328,132 @@ N_EXPR *identifiers(char* name, N_EXPR *extension, int type){
     return expr;
 }
 
-N_ASSIGN *assingmentFun(char* name, N_EXPR *index, N_EXPR *rhs){
+N_ASSIGN *assignmentFun(char* name, N_EXPR *index, N_EXPR *rhs){
     N_VAR_REF* var = malloc(sizeof(struct tN_VAR_REF));
+    if(strcmp(name, inFun) == 0){
+        name = "result";
+    }
     var->id = name;
+    ENTRY* e = variableLookup(name);
+    if(e == NULL){
+        printf("Error in line %d: variable '%s' referenced without declaration\n", yylineno, name);
+        free(var);
+        exit(13);
+    }
     var->index = index;
+    if(index != NULL){
+        checkIndex(index, e);
+    }
     N_ASSIGN* assign = malloc(sizeof (struct tN_ASSIGN));
     assign->var_ref = var;
     assign->rhs_expr = rhs;
+    if(e->typ == _ARRAY && index == NULL){
+        if(rhs->typ == VAR_REF){
+            ENTRY *r = variableLookup(rhs->description.var_ref->id);
+            if(!(e->ext.bounds.low == r->ext.bounds.low && e->ext.bounds.high == r->ext.bounds.high)){
+                printf("Error in line %d: arrays' bounds not matching\n", yylineno);
+                free(var);
+                free(assign);
+                exit(11);
+            }
+        }
+    }
+    int test;
+    if (e->typ == _ARRAY){
+        test = 1;
+    }
+    else{
+        test = 0;
+    }
+    checkType(e->dataType, test, rhs);
     return assign;
 }
+
+N_CALL *procCallFun(char* name, N_EXPR *params){
+    N_CALL* call = malloc(sizeof (struct tN_CALL));
+    call->id = name;
+    ENTRY *e = funLookup(name);
+    if(e == NULL){
+        printf("Error in line %d: Function '%s' referenced without declaration\n", yylineno, name);
+        free(call);
+        exit(14);
+    }
+    call->par_list = params;
+    checkParameters(e, params);
+    return call;
+}
+
+// utilities
+
+void checkType(_DATA_TYPE lhs, int array,  N_EXPR *rhs) {
+    if(rhs->typ == CONSTANT) {
+        if (lhs == _BOOL) {
+            if (strcmp(rhs->description.constant, "true") != 0 &&
+                strcmp(rhs->description.constant, "false") != 0) {
+                printf("Error in line %d: Type mismatch: bool <- other\n", yylineno);
+                exit(17);
+            }
+        } else if (lhs == _INT) {
+            if (strcmp(rhs->description.constant, "true") == 0 ||
+                strcmp(rhs->description.constant, "false") == 0) {
+                printf("Error in line %d: Type mismatch: int <- bool\n", yylineno);
+                exit(17);
+            }
+            float num = atof(rhs->description.constant);
+            int decimal = (int) (num * 10000) % 10000;
+            if (decimal != 0) {
+                printf("Error in line %d: Type mismatch: int <- float\n", yylineno);
+                exit(17);
+            }
+        } else if (lhs == _REAL) {
+            if (strcmp(rhs->description.constant, "true") == 0 ||
+                strcmp(rhs->description.constant, "false") == 0) {
+                printf("Error in line %d: Type mismatch: float <- bool\n", yylineno);
+                exit(17);
+            }
+        }
+    }
+    else {
+        if ((rhs->dataType == _INT || rhs->dataType == _REAL) && lhs == _BOOL) {
+            printf("Error in line %d: Type mismatch: bool <- other\n", yylineno);
+            exit(17);
+        }
+        if ((lhs == _INT || lhs == _REAL) && rhs->dataType == _BOOL) {
+            printf("Error in line %d: Type mismatch: other <- bool\n", yylineno);
+            exit(17);
+        }
+        if (rhs->typ == VAR_REF) {
+            ENTRY *e = variableLookup(rhs->description.var_ref->id);
+            if (e->typ == _ARRAY && rhs->description.var_ref->index == NULL && array == 0) {
+                printf("Error in line %d: Type mismatch: scalar <- array\n", yylineno);
+                exit(17);
+            }
+        } else if (rhs->typ == FUNC_CALL) {
+            if (rhs->dataType == _VOID) {
+                printf("Error in line %d: Type mismatch: other <- NONE\n", yylineno);
+                exit(17);
+            }
+        }
+    }
+}
+
 void checkIndex(N_EXPR *index, ENTRY *def){
     if (index->typ == CONSTANT) {
-
         if (strcmp(index->description.constant, "true") == 0 ||
         strcmp(index->description.constant, "false") == 0) {
-            printf("Illegal array subscription: Boolean\n");
-            exit(13);
+            printf("Error in line %d: Illegal array subscription: Boolean\n", yylineno);
+            exit(11);
         } else {
             float num = atof(index->description.constant);
             int decimal = (int) (num * 10000) % 10000;
             if (decimal != 0) {
-                printf("Illegal array subscription: Float\n");
-                exit(13);
+                printf("Error in line %d: Illegal array subscription: Float\n", yylineno);
+                exit(11);
             } else {
                 int num_i = (int) (num);
                 if (num_i < def->ext.bounds.low || num_i > def->ext.bounds.high) {
-                    printf("Illegal array subscription: Index out of bound");
-                    exit(13);
+                    printf("Error in line %d: Illegal array subscription: Index out of bound", yylineno);
+                    exit(11);
                 }
             }
         }
@@ -288,19 +461,22 @@ void checkIndex(N_EXPR *index, ENTRY *def){
     if (index->typ == VAR_REF) {
         ENTRY *e = variableLookup(index->description.var_ref->id);
         if (e->dataType != _INT) {
-            printf("Illegal array subscription: Variable is not int\n");
-            exit(13);
+            printf("Error in line %d: Illegal array subscription: Variable is not int\n", yylineno);
+            exit(11);
         }
     }
     if (index->typ == FUNC_CALL) {
         ENTRY *e = funLookup(index->description.var_ref->id);
         if (e->dataType != _INT) {
-            printf("Illegal array subscription: Function is not int\n");
-            exit(13);
+            printf("Error in line %d: Illegal array subscription: Function is not int\n", yylineno);
+            exit(11);
         }
     }
     if(index->typ == OP){
-        //TODO: NOT YET IMPLEMENTED
+        if(index->dataType != _INT){
+            printf("Error in line %d: Illegal array subscription: Expression is not int\n", yylineno);
+            exit(11);
+        }
     }
 }
 
@@ -313,7 +489,7 @@ void findDuplicates(ENTRY *scope){
         next = current->next;
         while(next != NULL){
             if (strcmp(current->id, next->id) == 0){
-                printf("Redeclaration of variable/function '%s' within one scope\n", current->id);
+                printf("Error in line %d: Redeclaration of variable/function '%s' within one scope\n", yylineno, current->id);
                 res += 1;
             }
             next = next->next;
@@ -321,7 +497,7 @@ void findDuplicates(ENTRY *scope){
         next = funcs;
         while(next != NULL){
             if (strcmp(current->id, next->id) == 0){
-                printf("Redeclaration of variable/function '%s' within one scope\n", current->id);
+                printf("Error in line %d: Redeclaration of variable/function '%s' within one scope\n", yylineno, current->id);
                 res += 1;
             }
             next = next->next;
@@ -329,16 +505,14 @@ void findDuplicates(ENTRY *scope){
         current = current->next;
     }
     if(res != 0){
-        printf("%d variable(s) duplicated\n", res);
+        printf("\t%d variable(s) duplicated\n", res);
         exit(12);
     }
 }
 ENTRY *funLookup(char* name){
-    printf("in Lookup; goal -> %s\n", name);
     ENTRY *output = NULL;
     ENTRY *current = funcs;
     while(current != NULL){
-        printf("%s\n", current->id);
         if(strcmp(current->id, name) == 0){
             output = current;
             break;
@@ -348,12 +522,9 @@ ENTRY *funLookup(char* name){
     return output;
 }
 ENTRY* variableLookup(char* name){
-    printScope();
-    printf("in Lookup; goal -> %s\n", name);
     ENTRY *output = NULL;
     ENTRY *current = globalVars;
     while(current != NULL){
-        printf("%s\n", current->id);
         if(strcmp(current->id, name) == 0){
             output = current;
             break;
@@ -361,9 +532,7 @@ ENTRY* variableLookup(char* name){
         current = current->next;
     }
     current = localVars;
-    printf("locals:\n");
     while(current != NULL){
-        printf("%s\n", current->id);
         if(strcmp(current->id, name) == 0){
             output = current;
             break;
@@ -398,4 +567,57 @@ ENTRY *constructMain(){
     f->ext.parList = NULL;
     f->next = NULL;
     return f;
+}
+void checkParameters(ENTRY* fun, N_EXPR* pars){
+    ENTRY* formal = fun->ext.parList;
+    int i = 0;
+    while(formal != NULL){
+        printf("%s\n", formal->id);
+        if(pars == NULL){
+            printf("Error in line %d: Too few arguments provided for function '%s'. "
+                   "Should be more than %d\n", yylineno, fun->id, i);
+            exit(15);
+        }
+        int test;
+        if (formal->typ == _ARRAY){
+            test = 1;
+        }
+        else{
+            test = 0;
+        }
+        checkType(formal->dataType, test, pars);
+        formal = formal->next;
+        pars = pars->next;
+        i += 1;
+    }
+    if(pars != NULL){
+        printf("Error in line %d: Too many arguments provided for function '%s'. "
+               "Should be %d\n", yylineno, fun->id, i);
+        exit(15);
+    }
+}
+
+ENTRY* extractParams(ENTRY* params) {
+    ENTRY *head = NULL;
+    ENTRY *current = NULL;
+    while(params != NULL){
+        ENTRY *entry = (ENTRY*) malloc(sizeof (struct tENTRY));
+        entry->typ = params->typ;
+        entry->id = params ->id;
+        entry->dataType = params->dataType;
+        if(entry->typ == _ARRAY){
+            entry->ext = params->ext;
+        }
+        entry->next = NULL;
+        if(head == NULL){
+            head = entry;
+            current = head;
+        }
+        else{
+            current->next = entry;
+            current = current->next;
+        }
+        params = params->next;
+    }
+    return head;
 }

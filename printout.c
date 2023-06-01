@@ -8,7 +8,6 @@ _DATA_TYPE mainType = _INT;
 char* mainDef = "int main(int argc, char *argv[])";
 int indentLevel = 0;
 _DATA_TYPE returnType = 0;
-_DATA_TYPE exprType = _VOID;
 
 
 char *typeToStr(_DATA_TYPE type) {
@@ -77,10 +76,11 @@ void printVarRef(N_VAR_REF *input) {
         printf("]");
         fprintf(f, "]");
     }
-    free(input);
+    //free(input);
 }
 
 void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
+    printf("In print statemnet\n");
     if(input == NULL){
         return;
     }
@@ -94,6 +94,8 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
     }
     indentLevel+=1;
     while(input != NULL){
+        printf("Input not null\n");
+        printf("input type: %d\n", input->typ);
         switch(input->typ){
             case _ASSIGN:
                 printAssign(input->node.assign_stmt, ignore_indent);
@@ -107,10 +109,13 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
             case _PROC_CALL:
                 printCall(input->node.proc_call, ";\n", ignore_indent);
                 break;
+            default:
+                printf("Type not recognised\n");
+                exit(102);
         }
         N_STMT *old = input;
         input = input->next;
-        free(old);
+        //free(old);
     }
     indentLevel-=1;
     if (marker == 1){
@@ -118,7 +123,7 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
         printf("}\n");
         fprintf(f, "}\n");
     }
-    free(input);
+    //free(input);
 }
 
 void printExpr(N_EXPR *input, char* separator) {
@@ -131,9 +136,9 @@ void printExpr(N_EXPR *input, char* separator) {
         }
         N_EXPR *old = input;
         input = input->next;
-        free(old);
+        //free(old);
     }
-    free(input);
+    //free(input);
 }
 
 void printExprInner(N_EXPR *input, char* separator) {
@@ -210,7 +215,6 @@ void printAssign(N_ASSIGN *input, int ignore_indent) {
         printIndent();
     }
     printVarRef(input->var_ref);
-    _DATA_TYPE lhsType = variableLookup(input->var_ref->id)->dataType;
     printf(" = ");
     fprintf(f, " = ");
     printExpr(input->rhs_expr, "");
@@ -225,37 +229,14 @@ void printCall(N_CALL *input, char* separator, int ignore_indent) {
     if(ignore_indent == 0){
         printIndent();
     }
-    ENTRY * fun = funLookup(input->id);
-    if(fun == NULL){
-        printf("Function referenced without declaration: '%s'\n", input->id);
-        exit(13);
-    }
     printf("%s(", input->id);
     fprintf(f, "%s(", input->id);
-    checkParameters(fun, input->par_list);
     printExpr(input->par_list, ", ");
     printf(")%s", separator);
     fprintf(f, ")%s", separator);
 }
 
-void checkParameters(ENTRY* fun, N_EXPR* pars){
-    ENTRY* formal = fun->ext.parList;
-    int i = 0;
-    while(formal != NULL){
-        printf("%s\n", formal->id);
-        if(pars == NULL){
-            printf("Too few arguments provided for function '%s'. Should be more than %d\n", fun->id, i);
-            exit(14);
-        }
-        formal = formal->next;
-        pars = pars->next;
-        i += 1;
-    }
-    if(pars != NULL){
-        printf("Too many arguments provided for function '%s'. Should be %d\n", fun->id, i);
-        exit(14);
-    }
-}
+
 
 void printWhile(N_WHILE *input, int ignore_indent) {
     if(input == NULL){
@@ -294,8 +275,12 @@ void printIf(N_IF *input, int ignore_indent) {
 }
 
 void printEntry(ENTRY *input) {
+    printf("In entry\n");
     ENTRY *check = NULL;
     while(input != NULL){
+        printf("entry input is not null\n");
+        printf("%d\n", input);
+        printf("input type: %s\n", input->id);
         printIndent();
         switch (input->typ) {
             case _CONST:
@@ -315,6 +300,7 @@ void printEntry(ENTRY *input) {
                 fprintf(f, "[%d];\n", input->ext.bounds.high - input->ext.bounds.low+1);
                 break;
             case _PROG:
+                printf("Prog\n");
                 if (input->dataType == _MAIN){
                     printf("\n\t/* program: '%s' */\n\n\n", input->id);
                     fprintf(f, "\n\t/* program: '%s' */\n\n\n", input->id);
@@ -333,6 +319,7 @@ void printEntry(ENTRY *input) {
                 }
                 return;
             case _CALL:
+                printf("Call\n");
                 returnType = input->dataType;
                 printf("%s ", typeToStr(input->dataType));
                 fprintf(f, "%s ", typeToStr(input->dataType));
@@ -348,31 +335,9 @@ void printEntry(ENTRY *input) {
         }
         input = input->next;
     }
-}
-
-ENTRY* extractParams(ENTRY* params) {
-    ENTRY *head = NULL;
-    ENTRY *current = NULL;
-    while(params != NULL){
-        ENTRY *entry = (ENTRY*) malloc(sizeof (struct tENTRY));
-        entry->typ = params->typ;
-        entry->id = params ->id;
-        entry->dataType = params->dataType;
-        if(entry->typ == _ARRAY){
-            entry->ext = params->ext;
-        }
-        entry->next = NULL;
-        if(head == NULL){
-            head = entry;
-            current = head;
-        }
-        else{
-            current->next = entry;
-            current = current->next;
-        }
-        params = params->next;
+    if(input == NULL){
+        printf("input was null\n");
     }
-    return head;
 }
 
 void printArgs(ENTRY *input) {
@@ -397,7 +362,6 @@ void printArgs(ENTRY *input) {
 void printProgramBase(N_PROG *input, int set_global) {
     N_PROG* main;
     while( input != NULL){
-        printf("Local variables should be flushed\n");
         if(input->entry->dataType == _MAIN){
             printf("Type is main. Global: %d\n", set_global);
             main = input;
@@ -427,17 +391,19 @@ void printProgramBase(N_PROG *input, int set_global) {
 }
 
 void printProgram(N_PROG *input, int set_global) {
+    printf("In print prog\n");
     indentLevel = 0;
     ENTRY* vars = NULL;
     if (input != NULL){
+        printf("Input was not null\n");
         printIndent();
-        vars = input->entry->next;
         printEntry(input->entry); // header
+        vars = input->entry->next;
+        printf("Vars were assigned\n");
         printf("{\n");
         fprintf(f, "{\n");
         indentLevel+=1;
         if(returnType != _MAIN || set_global != 1){
-            printf("Trying to add variables\n");
             if (vars != NULL){
                 printEntry(vars);
             }
@@ -469,6 +435,9 @@ void printProgram(N_PROG *input, int set_global) {
 //        free(input->entry->ext.parList);
         //cleanSymTable(vars);
     }
+    else{
+        printf("input was null\n");
+    }
 }
 
 void printIndent() {
@@ -494,7 +463,7 @@ void run(int set_global) {
     printProgramBase(ast, set_global);
     fprintf(f, "\n\n\t /* Created using parser by Karol Wesolowski */");
     fclose(f);
-    free(ast);
+    //free(ast);
 }
 
 void cleanSymTable(ENTRY *symTab) {
@@ -504,29 +473,4 @@ void cleanSymTable(ENTRY *symTab) {
         free(symTab);
         symTab = new;
     }
-}
-
-ENTRY *append(ENTRY *a, ENTRY *b) {
-    if (b!= NULL)
-    {
-        if (a != NULL){
-            printf("Var was not null\n");
-            printf("a->next\n");
-            printf("%d\n", a->next);
-            while(a->next!= NULL){
-                printf("NEXT!\n");
-                a = a->next;
-            }
-            a->next = b->ext.parList;
-        }
-        else{
-            printf("Var was null\n");
-            a = b->ext.parList;
-        }
-        printf("appended successfully\n");
-    }
-    else{
-        printf("Nothing to append\n");
-    }
-    return a;
 }

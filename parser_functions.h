@@ -9,6 +9,7 @@
 #include <stdlib.h>
 
 extern void yyerror(char *s);
+extern int yylineno;
 
 ENTRY *globalVars;
 ENTRY *localVars;
@@ -30,7 +31,8 @@ N_EXPR *simpleExprFun(N_EXPR* left, _OPERATOR op, N_EXPR *right);
 N_EXPR *booleans(char* val);
 N_EXPR *numConversion(float num);
 N_EXPR *identifiers(char* name, N_EXPR *extension, int type);
-N_ASSIGN *assingmentFun(char* name, N_EXPR *index, N_EXPR *rhs);
+N_ASSIGN *assignmentFun(char* name, N_EXPR *index, N_EXPR *rhs);
+N_CALL *procCallFun(char* name, N_EXPR *params);
 
 ENTRY* variableLookup(char* name);
 void findDuplicates(ENTRY *scope);
@@ -39,5 +41,8 @@ void printScope();
 ENTRY *constructMain();
 ENTRY* append(ENTRY* node, ENTRY* goal);
 void checkIndex(N_EXPR *index, ENTRY *def);
+void checkType(_DATA_TYPE lhs, int array, N_EXPR *rhs);
+void checkParameters(ENTRY* fun, N_EXPR* pars);
+ENTRY* extractParams(ENTRY* params);
 
 #endif //SCANNER_L_PARSER_FUNCTIONS_H

@@ -23,4 +23,4 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 
 ADD_EXECUTABLE(main ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
-        main.c ast.h printout.c printout.h parser_functions.c)
+        parser_yacc.y main.c ast.h printout.c printout.h parser_functions.c)
