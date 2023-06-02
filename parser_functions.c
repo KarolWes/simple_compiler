@@ -103,14 +103,18 @@ ENTRY *idListFun(char *id, ENTRY *second) {
 N_PROG *subProgListFun(ENTRY *header, ENTRY *vars) {
     N_PROG* prog = (N_PROG *)(malloc(sizeof(struct tN_PROG)));
     prog->entry = header;
+    printf("Header -> %d\n", header);
+    printf("Subprogram -> %d\n", prog);
     prog->entry->next = vars;
     localVars = append(vars, localVars);
     findDuplicates(localVars);
+    printf("Subprogram#2 -> %d\n", prog);
     return prog;
 }
 
 ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
     ENTRY *check = funLookup(id);
+    printf("In head\n");
     if(check == NULL){
         inFun = id;
         ENTRY *func = (ENTRY*) malloc(sizeof (struct tENTRY));
@@ -125,6 +129,7 @@ ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
             localVars = extractParams(params);
         }
         func->id = id;
+        printf("func type: %d\n", func->typ);
         func->ext.parList = params;
         func->next = NULL;
         ENTRY *toSave = (ENTRY*) malloc(sizeof (struct tENTRY));
@@ -481,7 +486,7 @@ void checkIndex(N_EXPR *index, ENTRY *def){
 }
 
 void findDuplicates(ENTRY *scope){
-    printScope();
+//    printScope();
     int res = 0;
     ENTRY *current = scope;
     ENTRY *next;

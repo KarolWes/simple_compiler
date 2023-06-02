@@ -5,6 +5,7 @@
 void yyerror(char *s);
 int yylex();
 extern int yylineno;
+N_PROG *tmp;
 
 %}
 
@@ -77,8 +78,17 @@ simpleType	: INTEGER	{$$ = _INT;}
 		| BOOLEAN	{$$ = _BOOL;}
 		;
 subProgList	:	{$$ = NULL; }
-		|  subProgHead varDec { $<prog>$ = subProgListFun($1, $2); }
-		compStmt SEMICOLON subProgList { $$ = $<prog>$; $$->stmt = $4; $$->next = $6; }
+		|  subProgHead varDec {
+		// TODO: This
+		tmp = subProgListFun($1, $2);
+					printf("outputcheck: %d\n", tmp);
+		}
+		compStmt SEMICOLON subProgList {
+		printf("Address of subprogram in parser #0-> %d\n", tmp);
+		$$ = tmp;
+		$$->stmt = $4; $$->next = $6;
+		printf("Address of statement: %d\n", $4);
+		printf("Address of subprogram in parser -> %d\n", $$);}
 		;
 subProgHead	: FUNCTION ID args COLON simpleType SEMICOLON		{ $$ = subHeaderFun($5, $2, $3); }
 		| PROCEDURE ID args SEMICOLON				{ $$ = subHeaderFun(_VOID, $2, $3); }

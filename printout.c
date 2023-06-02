@@ -378,6 +378,7 @@ void printProgramBase(N_PROG *input, int set_global) {
             }
         }
         if(input != NULL){
+            printf("Prog address: %d", input);
             printProgram(input, set_global);
             N_PROG *old = input;
             input = input->next;
@@ -391,7 +392,7 @@ void printProgramBase(N_PROG *input, int set_global) {
 }
 
 void printProgram(N_PROG *input, int set_global) {
-    printf("In print prog\n");
+    printf("In print prog %d\n", input);
     indentLevel = 0;
     ENTRY* vars = NULL;
     if (input != NULL){
@@ -460,6 +461,7 @@ void run(int set_global) {
     printf("In main, start parsing...\n");
     yyparse();
     printf("Parsing finished...\n\n\n");
+    printf("subprogs: %d\n", ast->next);
     printProgramBase(ast, set_global);
     fprintf(f, "\n\n\t /* Created using parser by Karol Wesolowski */");
     fclose(f);
