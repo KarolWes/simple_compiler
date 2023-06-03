@@ -47,7 +47,10 @@ extern int yylineno;
 %start  start
 
 %%
-start		: PROGRAM ID SEMICOLON varDec 	{ ast = (N_PROG*) malloc(sizeof (struct tN_PROG)); fprintf(stdout, "Starting\n"); startFun($2, $4); }
+start		: PROGRAM ID SEMICOLON varDec 	{ ast = (N_PROG*) malloc(sizeof (struct tN_PROG));
+						fprintf(stdout, "Starting\n");
+						startFun($2, $4);
+						}
 		subProgList 			{
 						ast->next = $6;
 						printf("subs -> %d\n", ast->next);
@@ -78,16 +81,13 @@ simpleType	: INTEGER	{$$ = _INT;}
 		;
 subProgList	:	{$$ = NULL; }
 		|  subProgHead varDec {
-		// TODO: This
 		$<prog>$ = subProgListFun($1, $2);
-		// printf("outputcheck: %d\n", $<prog>$);
 		}
 		compStmt SEMICOLON subProgList {
-		printf("Address of subprogram in parser #0-> %d\n", $<prog>3);
 		$$ = $<prog>3;
-		$$->stmt = $4; $$->next = $6;
-		printf("Address of statement: %d\n", $4);
-		printf("Address of subprogram in parser -> %d\n", $$);}
+		$$->stmt = $4;
+		$$->next = $6;
+		}
 		;
 subProgHead	: FUNCTION ID args COLON simpleType SEMICOLON		{ $$ = subHeaderFun($5, $2, $3); }
 		| PROCEDURE ID args SEMICOLON				{ $$ = subHeaderFun(_VOID, $2, $3); }

@@ -1,8 +1,6 @@
 #include <stdlib.h>
 #include "printout.h"
 
-
-
 int main(int argc, char *argv[]) {
     printf("Main, hello; argc: %d\n", argc);
     if(argc != 2)

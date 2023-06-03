@@ -3,12 +3,17 @@
 //
 #include "printout.h"
 
-
 _DATA_TYPE mainType = _INT;
 char* mainDef = "int main(int argc, char *argv[])";
 int indentLevel = 0;
 _DATA_TYPE returnType = 0;
 
+void printIndent() {
+    for(int i = 0; i < indentLevel; i++){
+        printf("\t");
+        fprintf(f, "\t");
+    }
+}
 
 char *typeToStr(_DATA_TYPE type) {
     switch (type) {
@@ -62,6 +67,62 @@ char *operatorToStr(_OPERATOR o) {
     }
 }
 
+void printEntry(ENTRY *input) {
+    while(input != NULL){
+        printIndent();
+        switch (input->typ) {
+            case _CONST:
+                break;
+            case _VAR:
+                printf("%s ", typeToStr(input->dataType));
+                fprintf(f, "%s ", typeToStr(input->dataType));
+                printf("%s;\n",input->id);
+                fprintf(f, "%s;\n",input->id);
+                break;
+            case _ARRAY:
+                printf("%s ", typeToStr(input->dataType));
+                fprintf(f, "%s ", typeToStr(input->dataType));
+                printf("%s ",input->id);
+                fprintf(f, "%s ",input->id);
+                printf("[%d];\n", input->ext.bounds.high - input->ext.bounds.low+1);
+                fprintf(f, "[%d];\n", input->ext.bounds.high - input->ext.bounds.low+1);
+                break;
+            case _PROG:
+                if (input->dataType == _MAIN){
+                    printf("\n\t/* program: '%s' */\n\n\n", input->id);
+                    fprintf(f, "\n\t/* program: '%s' */\n\n\n", input->id);
+                }
+                returnType = input->dataType;
+                if (input->dataType == _MAIN){
+                    printf("%s\n", mainDef);
+                    fprintf(f, "%s\n", mainDef);
+                }
+                else{
+                    printf("%s ", typeToStr(input->dataType));
+                    fprintf(f, "%s ", typeToStr(input->dataType));
+                    printf("%s(", input->id);
+                    fprintf(f, "%s(", input->id);
+                    printArgs(input->ext.parList);
+                }
+                return;
+            case _CALL:
+                returnType = input->dataType;
+                printf("%s ", typeToStr(input->dataType));
+                fprintf(f, "%s ", typeToStr(input->dataType));
+                printf("%s(",input->id);
+                fprintf(f, "%s(",input->id);
+                printArgs(input->ext.parList);
+                printf(")\n");
+                fprintf(f, ")\n");
+                return;
+            default:
+                printf("Unidentified type: %d\n", input->typ);
+                fprintf(f, "Unidentified type: %d\n", input->typ);
+        }
+        input = input->next;
+    }
+}
+
 void printVarRef(N_VAR_REF *input) {
     if(input == NULL){
         return;
@@ -79,56 +140,8 @@ void printVarRef(N_VAR_REF *input) {
     //free(input);
 }
 
-void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
-    printf("In print statemnet\n");
-    if(input == NULL){
-        return;
-    }
-    int marker = 0;
-    if(ignore_marker == 0 && input->next != NULL)
-    {
-        printIndent();
-        printf("{\n");
-        fprintf(f, "{\n");
-        marker = 1;
-    }
-    indentLevel+=1;
-    while(input != NULL){
-        printf("Input not null\n");
-        printf("input type: %d\n", input->typ);
-        switch(input->typ){
-            case _ASSIGN:
-                printAssign(input->node.assign_stmt, ignore_indent);
-                break;
-            case _IF:
-                printIf(input->node.if_stmt, ignore_indent);
-                break;
-            case _WHILE:
-                printWhile(input->node.while_stmt, ignore_indent);
-                break;
-            case _PROC_CALL:
-                printCall(input->node.proc_call, ";\n", ignore_indent);
-                break;
-            default:
-                printf("Type not recognised\n");
-                exit(102);
-        }
-        N_STMT *old = input;
-        input = input->next;
-        //free(old);
-    }
-    indentLevel-=1;
-    if (marker == 1){
-        printIndent();
-        printf("}\n");
-        fprintf(f, "}\n");
-    }
-    //free(input);
-}
-
 void printExpr(N_EXPR *input, char* separator) {
     while(input != NULL){
-        printf("in expr\n");
         printExprInner(input, separator);
         if (input->next != NULL){
             printf("%s", separator);
@@ -183,30 +196,6 @@ void printExprInner(N_EXPR *input, char* separator) {
     }
 }
 
-void printOp(N_EXPR  *input){
-    if(input->description.operation.op == NOT_OP){
-        printf("! ");
-        fprintf(f, "! ");
-        printExprInner(input->description.operation.expr, "");
-//        free(input->description.operation.expr);
-    }
-    else{
-        N_EXPR *e = input->description.operation.expr;
-        while(e!= NULL){
-            printExprInner(e, "");
-            if (e->next != NULL)
-            {
-                printf(" %s ", operatorToStr(input->description.operation.op));
-                fprintf(f, " %s ", operatorToStr(input->description.operation.op));
-            }
-            N_EXPR *old = e;
-            e = e->next;
-//            free(old);
-        }
-    }
-//    free(input);
-}
-
 void printAssign(N_ASSIGN *input, int ignore_indent) {
     if(input == NULL){
         return;
@@ -220,37 +209,6 @@ void printAssign(N_ASSIGN *input, int ignore_indent) {
     printExpr(input->rhs_expr, "");
     printf(";\n");
     fprintf(f, ";\n");
-}
-
-void printCall(N_CALL *input, char* separator, int ignore_indent) {
-    if(input == NULL){
-        return;
-    }
-    if(ignore_indent == 0){
-        printIndent();
-    }
-    printf("%s(", input->id);
-    fprintf(f, "%s(", input->id);
-    printExpr(input->par_list, ", ");
-    printf(")%s", separator);
-    fprintf(f, ")%s", separator);
-}
-
-
-
-void printWhile(N_WHILE *input, int ignore_indent) {
-    if(input == NULL){
-        return;
-    }
-    if(ignore_indent == 0){
-        printIndent();
-    }
-    printf("while (");
-    fprintf(f, "while (");
-    printExpr(input->expr, "");
-    printf(")\n");
-    fprintf(f, ")\n");
-    printStatement(input->stmt, 0, 0);
 }
 
 void printIf(N_IF *input, int ignore_indent) {
@@ -274,90 +232,78 @@ void printIf(N_IF *input, int ignore_indent) {
     }
 }
 
-void printEntry(ENTRY *input) {
-    printf("In entry\n");
-    ENTRY *check = NULL;
-    while(input != NULL){
-        printf("entry input is not null\n");
-        printf("%d\n", input);
-        printf("input type: %s\n", input->id);
-        printIndent();
-        switch (input->typ) {
-            case _CONST:
-                break;
-            case _VAR:
-                printf("%s ", typeToStr(input->dataType));
-                fprintf(f, "%s ", typeToStr(input->dataType));
-                printf("%s;\n",input->id);
-                fprintf(f, "%s;\n",input->id);
-                break;
-            case _ARRAY:
-                printf("%s ", typeToStr(input->dataType));
-                fprintf(f, "%s ", typeToStr(input->dataType));
-                printf("%s ",input->id);
-                fprintf(f, "%s ",input->id);
-                printf("[%d];\n", input->ext.bounds.high - input->ext.bounds.low+1);
-                fprintf(f, "[%d];\n", input->ext.bounds.high - input->ext.bounds.low+1);
-                break;
-            case _PROG:
-                printf("Prog\n");
-                if (input->dataType == _MAIN){
-                    printf("\n\t/* program: '%s' */\n\n\n", input->id);
-                    fprintf(f, "\n\t/* program: '%s' */\n\n\n", input->id);
-                }
-                returnType = input->dataType;
-                if (input->dataType == _MAIN){
-                    printf("%s\n", mainDef);
-                    fprintf(f, "%s\n", mainDef);
-                }
-                else{
-                    printf("%s ", typeToStr(input->dataType));
-                    fprintf(f, "%s ", typeToStr(input->dataType));
-                    printf("%s(", input->id);
-                    fprintf(f, "%s(", input->id);
-                    printArgs(input->ext.parList);
-                }
-                return;
-            case _CALL:
-                printf("Call\n");
-                returnType = input->dataType;
-                printf("%s ", typeToStr(input->dataType));
-                fprintf(f, "%s ", typeToStr(input->dataType));
-                printf("%s(",input->id);
-                fprintf(f, "%s(",input->id);
-                printArgs(input->ext.parList);
-                printf(")\n");
-                fprintf(f, ")\n");
-                return;
-            default:
-                printf("Unidentified type: %d\n", input->typ);
-                fprintf(f, "Unidentified type: %d\n", input->typ);
-        }
-        input = input->next;
-    }
+void printWhile(N_WHILE *input, int ignore_indent) {
     if(input == NULL){
-        printf("input was null\n");
+        return;
     }
+    if(ignore_indent == 0){
+        printIndent();
+    }
+    printf("while (");
+    fprintf(f, "while (");
+    printExpr(input->expr, "");
+    printf(")\n");
+    fprintf(f, ")\n");
+    printStatement(input->stmt, 0, 0);
 }
 
-void printArgs(ENTRY *input) {
+void printCall(N_CALL *input, char* separator, int ignore_indent) {
+    if(input == NULL){
+        return;
+    }
+    if(ignore_indent == 0){
+        printIndent();
+    }
+    printf("%s(", input->id);
+    fprintf(f, "%s(", input->id);
+    printExpr(input->par_list, ", ");
+    printf(")%s", separator);
+    fprintf(f, ")%s", separator);
+}
+
+void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
+    if(input == NULL){
+        return;
+    }
+    int marker = 0;
+    if(ignore_marker == 0 && input->next != NULL)
+    {
+        printIndent();
+        printf("{\n");
+        fprintf(f, "{\n");
+        marker = 1;
+    }
+    indentLevel+=1;
     while(input != NULL){
-        printf("%s ", typeToStr(input->dataType));
-        fprintf(f, "%s ", typeToStr(input->dataType));
-        printf("%s", input->id);
-        fprintf(f, "%s", input->id);
-        if(input->typ == _ARRAY){
-            printf("[%d]", input->ext.bounds.high - input->ext.bounds.low+1);
-            fprintf(f, "[%d]", input->ext.bounds.high - input->ext.bounds.low+1);
+        switch(input->typ){
+            case _ASSIGN:
+                printAssign(input->node.assign_stmt, ignore_indent);
+                break;
+            case _IF:
+                printIf(input->node.if_stmt, ignore_indent);
+                break;
+            case _WHILE:
+                printWhile(input->node.while_stmt, ignore_indent);
+                break;
+            case _PROC_CALL:
+                printCall(input->node.proc_call, ";\n", ignore_indent);
+                break;
+            default:
+                printf("Type not recognised\n");
+                exit(102);
         }
-        if (input->next != NULL){
-            printf(", ");
-            fprintf(f, ", ");
-        }
+        N_STMT *old = input;
         input = input->next;
+        //free(old);
     }
+    indentLevel-=1;
+    if (marker == 1){
+        printIndent();
+        printf("}\n");
+        fprintf(f, "}\n");
+    }
+    //free(input);
 }
-
 
 void printProgramBase(N_PROG *input, int set_global) {
     N_PROG* main;
@@ -378,7 +324,6 @@ void printProgramBase(N_PROG *input, int set_global) {
             }
         }
         if(input != NULL){
-            printf("Prog address: %d", input);
             printProgram(input, set_global);
             N_PROG *old = input;
             input = input->next;
@@ -392,15 +337,12 @@ void printProgramBase(N_PROG *input, int set_global) {
 }
 
 void printProgram(N_PROG *input, int set_global) {
-    printf("In print prog %d\n", input);
     indentLevel = 0;
     ENTRY* vars = NULL;
     if (input != NULL){
-        printf("Input was not null\n");
         printIndent();
         printEntry(input->entry); // header
         vars = input->entry->next;
-        printf("Vars were assigned\n");
         printf("{\n");
         fprintf(f, "{\n");
         indentLevel+=1;
@@ -436,15 +378,56 @@ void printProgram(N_PROG *input, int set_global) {
 //        free(input->entry->ext.parList);
         //cleanSymTable(vars);
     }
+}
+
+void printOp(N_EXPR  *input){
+    if(input->description.operation.op == NOT_OP){
+        printf("! ");
+        fprintf(f, "! ");
+        printExprInner(input->description.operation.expr, "");
+//        free(input->description.operation.expr);
+    }
     else{
-        printf("input was null\n");
+        N_EXPR *e = input->description.operation.expr;
+        while(e!= NULL){
+            printExprInner(e, "");
+            if (e->next != NULL)
+            {
+                printf(" %s ", operatorToStr(input->description.operation.op));
+                fprintf(f, " %s ", operatorToStr(input->description.operation.op));
+            }
+            N_EXPR *old = e;
+            e = e->next;
+//            free(old);
+        }
+    }
+//    free(input);
+}
+
+void printArgs(ENTRY *input) {
+    while(input != NULL){
+        printf("%s ", typeToStr(input->dataType));
+        fprintf(f, "%s ", typeToStr(input->dataType));
+        printf("%s", input->id);
+        fprintf(f, "%s", input->id);
+        if(input->typ == _ARRAY){
+            printf("[%d]", input->ext.bounds.high - input->ext.bounds.low+1);
+            fprintf(f, "[%d]", input->ext.bounds.high - input->ext.bounds.low+1);
+        }
+        if (input->next != NULL){
+            printf(", ");
+            fprintf(f, ", ");
+        }
+        input = input->next;
     }
 }
 
-void printIndent() {
-    for(int i = 0; i < indentLevel; i++){
-        printf("\t");
-        fprintf(f, "\t");
+void cleanSymTable(ENTRY *symTab) {
+    ENTRY  *new = NULL;
+    while(symTab != NULL){
+        new = symTab->next;
+        free(symTab);
+        symTab = new;
     }
 }
 
@@ -461,18 +444,8 @@ void run(int set_global) {
     printf("In main, start parsing...\n");
     yyparse();
     printf("Parsing finished...\n\n\n");
-    printf("subprogs: %d\n", ast->next);
     printProgramBase(ast, set_global);
     fprintf(f, "\n\n\t /* Created using parser by Karol Wesolowski */");
     fclose(f);
     //free(ast);
-}
-
-void cleanSymTable(ENTRY *symTab) {
-    ENTRY  *new = NULL;
-    while(symTab != NULL){
-        new = symTab->next;
-        free(symTab);
-        symTab = new;
-    }
 }

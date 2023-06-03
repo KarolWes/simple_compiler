@@ -2,8 +2,7 @@
 // Created by Karol on 25.05.2023.
 //
 
-#include <stdio.h>
-#include <string.h>
+
 #include "parser_functions.h"
 
 char* inFun = "";
@@ -83,15 +82,12 @@ ENTRY *simpleTypeFun(_DATA_TYPE type, int array, float lower, float upper) {
             free(output);
             exit(11);
         }
-        printf("\t%d\t%d\n", new_lower, new_upper);
         output->ext.bounds.low = new_lower;
         output->ext.bounds.high = new_upper;
     }
     output->next = NULL;
     return output;
 }
-
-
 
 ENTRY *idListFun(char *id, ENTRY *second) {
     ENTRY *idList = (ENTRY *)(malloc(sizeof(struct tENTRY)));
@@ -103,18 +99,14 @@ ENTRY *idListFun(char *id, ENTRY *second) {
 N_PROG *subProgListFun(ENTRY *header, ENTRY *vars) {
     N_PROG* prog = (N_PROG *)(malloc(sizeof(struct tN_PROG)));
     prog->entry = header;
-    printf("Header -> %d\n", header);
-    printf("Subprogram -> %d\n", prog);
     prog->entry->next = vars;
     localVars = append(vars, localVars);
     findDuplicates(localVars);
-    printf("Subprogram#2 -> %d\n", prog);
     return prog;
 }
 
 ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
     ENTRY *check = funLookup(id);
-    printf("In head\n");
     if(check == NULL){
         inFun = id;
         ENTRY *func = (ENTRY*) malloc(sizeof (struct tENTRY));
@@ -129,7 +121,6 @@ ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
             localVars = extractParams(params);
         }
         func->id = id;
-        printf("func type: %d\n", func->typ);
         func->ext.parList = params;
         func->next = NULL;
         ENTRY *toSave = (ENTRY*) malloc(sizeof (struct tENTRY));
@@ -148,20 +139,6 @@ ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
     }
 }
 
-ENTRY* append(ENTRY* node, ENTRY* goal){
-    ENTRY* head = goal;
-    if(head == NULL){
-        return node;
-    }
-    else{
-        while(head->next != NULL){
-            head = head->next;
-        }
-        head->next = node;
-        return goal;
-    }
-}
-
 ENTRY *parListFun(ENTRY *first, ENTRY *tail){
     ENTRY * n = first -> next;
     if(n == NULL){
@@ -175,6 +152,7 @@ ENTRY *parListFun(ENTRY *first, ENTRY *tail){
     }
     return first;
 }
+
 N_EXPR *simpleExprFun(N_EXPR* left, _OPERATOR op, N_EXPR *right){
     if(left == NULL){
         printf("Error in line %d: Empty expression\n", yylineno);
@@ -390,6 +368,89 @@ N_CALL *procCallFun(char* name, N_EXPR *params){
 
 // utilities
 
+ENTRY* variableLookup(char* name){
+    ENTRY *output = NULL;
+    ENTRY *current = globalVars;
+    while(current != NULL){
+        if(strcmp(current->id, name) == 0){
+            output = current;
+            break;
+        }
+        current = current->next;
+    }
+    current = localVars;
+    while(current != NULL){
+        if(strcmp(current->id, name) == 0){
+            output = current;
+            break;
+        }
+        current = current->next;
+    }
+    return output;
+}
+
+ENTRY *funLookup(char* name){
+    ENTRY *output = NULL;
+    ENTRY *current = funcs;
+    while(current != NULL){
+        if(strcmp(current->id, name) == 0){
+            output = current;
+            break;
+        }
+        current = current->next;
+    }
+    return output;
+}
+
+void findDuplicates(ENTRY *scope){
+//    printScope();
+    int res = 0;
+    ENTRY *current = scope;
+    ENTRY *next;
+    while(current != NULL){
+        next = current->next;
+        while(next != NULL){
+            if (strcmp(current->id, next->id) == 0){
+                printf("Error in line %d: Redeclaration of variable/function '%s' within one scope\n", yylineno, current->id);
+                res += 1;
+            }
+            next = next->next;
+        }
+        next = funcs;
+        while(next != NULL){
+            if (strcmp(current->id, next->id) == 0){
+                printf("Error in line %d: Redeclaration of variable/function '%s' within one scope\n", yylineno, current->id);
+                res += 1;
+            }
+            next = next->next;
+        }
+        current = current->next;
+    }
+    if(res != 0){
+        printf("\t%d variable(s) duplicated\n", res);
+        exit(12);
+    }
+}
+
+void printScope(){
+    printf("\tSCOPE\n");
+    ENTRY *current = globalVars;
+    while (current != NULL){
+        printf("\tglobal: %s\n", current->id);
+        current = current->next;
+    }
+    current = funcs;
+    while (current != NULL){
+        printf("\tfunctions: %s\n", current->id);
+        current = current->next;
+    }
+    current = localVars;
+    while (current != NULL){
+        printf("\tlocal: %s\n", current->id);
+        current = current->next;
+    }
+}
+
 void checkType(_DATA_TYPE lhs, int array,  N_EXPR *rhs) {
     if(rhs->typ == CONSTANT) {
         if (lhs == _BOOL) {
@@ -485,99 +546,10 @@ void checkIndex(N_EXPR *index, ENTRY *def){
     }
 }
 
-void findDuplicates(ENTRY *scope){
-//    printScope();
-    int res = 0;
-    ENTRY *current = scope;
-    ENTRY *next;
-    while(current != NULL){
-        next = current->next;
-        while(next != NULL){
-            if (strcmp(current->id, next->id) == 0){
-                printf("Error in line %d: Redeclaration of variable/function '%s' within one scope\n", yylineno, current->id);
-                res += 1;
-            }
-            next = next->next;
-        }
-        next = funcs;
-        while(next != NULL){
-            if (strcmp(current->id, next->id) == 0){
-                printf("Error in line %d: Redeclaration of variable/function '%s' within one scope\n", yylineno, current->id);
-                res += 1;
-            }
-            next = next->next;
-        }
-        current = current->next;
-    }
-    if(res != 0){
-        printf("\t%d variable(s) duplicated\n", res);
-        exit(12);
-    }
-}
-ENTRY *funLookup(char* name){
-    ENTRY *output = NULL;
-    ENTRY *current = funcs;
-    while(current != NULL){
-        if(strcmp(current->id, name) == 0){
-            output = current;
-            break;
-        }
-        current = current->next;
-    }
-    return output;
-}
-ENTRY* variableLookup(char* name){
-    ENTRY *output = NULL;
-    ENTRY *current = globalVars;
-    while(current != NULL){
-        if(strcmp(current->id, name) == 0){
-            output = current;
-            break;
-        }
-        current = current->next;
-    }
-    current = localVars;
-    while(current != NULL){
-        if(strcmp(current->id, name) == 0){
-            output = current;
-            break;
-        }
-        current = current->next;
-    }
-    return output;
-}
-void printScope(){
-    printf("\tSCOPE\n");
-    ENTRY *current = globalVars;
-    while (current != NULL){
-        printf("\tglobal: %s\n", current->id);
-        current = current->next;
-    }
-    current = funcs;
-    while (current != NULL){
-        printf("\tfunctions: %s\n", current->id);
-        current = current->next;
-    }
-    current = localVars;
-    while (current != NULL){
-        printf("\tlocal: %s\n", current->id);
-        current = current->next;
-    }
-}
-ENTRY *constructMain(){
-    ENTRY *f = (ENTRY*) malloc(sizeof (struct tENTRY));
-    f->typ = _CALL;
-    f->id = "main";
-    f->dataType = _MAIN;
-    f->ext.parList = NULL;
-    f->next = NULL;
-    return f;
-}
 void checkParameters(ENTRY* fun, N_EXPR* pars){
     ENTRY* formal = fun->ext.parList;
     int i = 0;
     while(formal != NULL){
-        printf("%s\n", formal->id);
         if(pars == NULL){
             printf("Error in line %d: Too few arguments provided for function '%s'. "
                    "Should be more than %d\n", yylineno, fun->id, i);
@@ -625,4 +597,28 @@ ENTRY* extractParams(ENTRY* params) {
         params = params->next;
     }
     return head;
+}
+
+ENTRY *constructMain(){
+    ENTRY *f = (ENTRY*) malloc(sizeof (struct tENTRY));
+    f->typ = _CALL;
+    f->id = "main";
+    f->dataType = _MAIN;
+    f->ext.parList = NULL;
+    f->next = NULL;
+    return f;
+}
+
+ENTRY* append(ENTRY* node, ENTRY* goal){
+    ENTRY* head = goal;
+    if(head == NULL){
+        return node;
+    }
+    else{
+        while(head->next != NULL){
+            head = head->next;
+        }
+        head->next = node;
+        return goal;
+    }
 }
