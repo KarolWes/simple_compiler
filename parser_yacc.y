@@ -5,7 +5,6 @@
 void yyerror(char *s);
 int yylex();
 extern int yylineno;
-N_PROG *tmp;
 
 %}
 
@@ -80,12 +79,12 @@ simpleType	: INTEGER	{$$ = _INT;}
 subProgList	:	{$$ = NULL; }
 		|  subProgHead varDec {
 		// TODO: This
-		tmp = subProgListFun($1, $2);
-					printf("outputcheck: %d\n", tmp);
+		$<prog>$ = subProgListFun($1, $2);
+		// printf("outputcheck: %d\n", $<prog>$);
 		}
 		compStmt SEMICOLON subProgList {
-		printf("Address of subprogram in parser #0-> %d\n", tmp);
-		$$ = tmp;
+		printf("Address of subprogram in parser #0-> %d\n", $<prog>3);
+		$$ = $<prog>3;
 		$$->stmt = $4; $$->next = $6;
 		printf("Address of statement: %d\n", $4);
 		printf("Address of subprogram in parser -> %d\n", $$);}
