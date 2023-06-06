@@ -3,11 +3,17 @@
 //
 #include "printout.h"
 
+/* global variables */
+
 _DATA_TYPE mainType = _INT;
 char* mainDef = "int main(int argc, char *argv[])";
 int indentLevel = 0;
 _DATA_TYPE returnType = 0;
 
+/* Utility functions */
+
+/* Function puts on the console and into the file required amount of \t (tabulators)
+ * to create clear indentation */
 void printIndent() {
     for(int i = 0; i < indentLevel; i++){
         printf("\t");
@@ -15,6 +21,7 @@ void printIndent() {
     }
 }
 
+/* Function takes the enum value of type and returns its string definition */
 char *typeToStr(_DATA_TYPE type) {
     switch (type) {
         case _BOOL:
@@ -30,6 +37,7 @@ char *typeToStr(_DATA_TYPE type) {
     }
 }
 
+/* Function takes the enum value of operator and returns its string value */
 char *operatorToStr(_OPERATOR o) {
     switch (o) {
         case NO_OP:
@@ -67,6 +75,7 @@ char *operatorToStr(_OPERATOR o) {
     }
 }
 
+/* Print functions */
 void printEntry(ENTRY *input) {
     while(input != NULL){
         printIndent();
@@ -154,6 +163,11 @@ void printExpr(N_EXPR *input, char* separator) {
     //free(input);
 }
 
+/* Printing the expression is separated into two different functions,
+ * this one deals with the most of the work
+ * parenthesis printing could be probably done better
+ * *separator* defines the string used to separate different parts of expression
+ * (in general, it is set to , (coma) in case of function calls)*/
 void printExprInner(N_EXPR *input, char* separator) {
     float num;
     if(input->parenthesis == 1){
@@ -196,13 +210,11 @@ void printExprInner(N_EXPR *input, char* separator) {
     }
 }
 
-void printAssign(N_ASSIGN *input, int ignore_indent) {
+void printAssign(N_ASSIGN *input) {
     if(input == NULL){
         return;
     }
-    if(ignore_indent == 0){
-        printIndent();
-    }
+    printIndent();
     printVarRef(input->var_ref);
     printf(" = ");
     fprintf(f, " = ");
@@ -211,49 +223,46 @@ void printAssign(N_ASSIGN *input, int ignore_indent) {
     fprintf(f, ";\n");
 }
 
-void printIf(N_IF *input, int ignore_indent) {
+void printIf(N_IF *input) {
     if(input == NULL){
         return;
     }
-    if(ignore_indent == 0){
-        printIndent();
-    }
+    printIndent();
     printf("if (");
     fprintf(f, "if (");
     printExpr(input->expr, "");
     printf(")\n");
     fprintf(f, ")\n");
-    printStatement(input->then_part, 0, 0);
+    printStatement(input->then_part, 0);
     if(input->else_part != NULL){
         printIndent();
         printf("else\n");
         fprintf(f, "else\n");
-        printStatement(input->else_part, 0, 0);
+        printStatement(input->else_part, 0);
     }
 }
 
-void printWhile(N_WHILE *input, int ignore_indent) {
+void printWhile(N_WHILE *input) {
     if(input == NULL){
         return;
     }
-    if(ignore_indent == 0){
-        printIndent();
-    }
+    printIndent();
     printf("while (");
     fprintf(f, "while (");
     printExpr(input->expr, "");
     printf(")\n");
     fprintf(f, ")\n");
-    printStatement(input->stmt, 0, 0);
+    printStatement(input->stmt, 0);
 }
 
+/* This function deals with printing function calls. It has a special flag
+ * *ignore_indent* which does exactly that,
+ * used only in cas of calling function as an argument in other function */
 void printCall(N_CALL *input, char* separator, int ignore_indent) {
     if(input == NULL){
         return;
     }
-    if(ignore_indent == 0){
-        printIndent();
-    }
+    if(ignore_indent == 0) { printIndent(); }
     printf("%s(", input->id);
     fprintf(f, "%s(", input->id);
     printExpr(input->par_list, ", ");
@@ -261,7 +270,7 @@ void printCall(N_CALL *input, char* separator, int ignore_indent) {
     fprintf(f, ")%s", separator);
 }
 
-void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
+void printStatement(N_STMT *input, int ignore_marker) {
     if(input == NULL){
         return;
     }
@@ -277,16 +286,16 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
     while(input != NULL){
         switch(input->typ){
             case _ASSIGN:
-                printAssign(input->node.assign_stmt, ignore_indent);
+                printAssign(input->node.assign_stmt);
                 break;
             case _IF:
-                printIf(input->node.if_stmt, ignore_indent);
+                printIf(input->node.if_stmt);
                 break;
             case _WHILE:
-                printWhile(input->node.while_stmt, ignore_indent);
+                printWhile(input->node.while_stmt);
                 break;
             case _PROC_CALL:
-                printCall(input->node.proc_call, ";\n", ignore_indent);
+                printCall(input->node.proc_call, ";\n", 0);
                 break;
             default:
                 printf("Type not recognised\n");
@@ -305,6 +314,12 @@ void printStatement(N_STMT *input, int ignore_marker, int ignore_indent) {
     //free(input);
 }
 
+/* The main function that is called from runner.
+ * It analyses the tree and governs the main structure:
+ * - global variables
+ * - order of functions
+ * - main function
+ * *set_global* can be used to turn of global variables and treat all as locals in main. */
 void printProgramBase(N_PROG *input, int set_global) {
     N_PROG* main;
     while( input != NULL){
@@ -336,6 +351,11 @@ void printProgramBase(N_PROG *input, int set_global) {
 //    free(main);
 }
 
+/* prints internal structure of the function:
+ * - header
+ * - local variables
+ * - body
+ * - return */
 void printProgram(N_PROG *input, int set_global) {
     indentLevel = 0;
     ENTRY* vars = NULL;
@@ -357,7 +377,7 @@ void printProgram(N_PROG *input, int set_global) {
             fprintf(f, "%s %s;\n", typeToStr(returnType), "result");
         }
         indentLevel-=1;
-        printStatement(input->stmt, 1, 0);
+        printStatement(input->stmt, 1);
         if(returnType != _VOID){
             printIndent();
             if(returnType != _MAIN)
@@ -380,6 +400,8 @@ void printProgram(N_PROG *input, int set_global) {
     }
 }
 
+/* specialized function for printing operation chains,
+ * because they are linked different from other elements of tree */
 void printOp(N_EXPR  *input){
     if(input->description.operation.op == NOT_OP){
         printf("! ");
@@ -404,6 +426,7 @@ void printOp(N_EXPR  *input){
 //    free(input);
 }
 
+/* This function prints the arguments of the function call */
 void printArgs(ENTRY *input) {
     while(input != NULL){
         printf("%s ", typeToStr(input->dataType));
@@ -422,6 +445,7 @@ void printArgs(ENTRY *input) {
     }
 }
 
+/* For the future use */
 void cleanSymTable(ENTRY *symTab) {
     ENTRY  *new = NULL;
     while(symTab != NULL){
@@ -431,6 +455,8 @@ void cleanSymTable(ENTRY *symTab) {
     }
 }
 
+/* runner function to be executed
+ * should also do the memory cleanup */
 void run(int set_global) {
     if(set_global != 1 && set_global != 0){
         printf("Unavailable value. Try 1 or 0");

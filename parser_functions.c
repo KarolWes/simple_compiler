@@ -1,14 +1,15 @@
 //
 // Created by Karol on 25.05.2023.
 //
-
-
 #include "parser_functions.h"
 
 char* inFun = "";
 
 /* parsing functions */
+/* Functions in this section generally assign memory and needed values to the structures on the tree
+ * some of them also performs some checks*/
 
+/* for yacc parser START */
 void startFun(char* id, ENTRY* vars){
     funcs = constructMain();
     res = (ENTRY*)malloc(sizeof(struct tENTRY));
@@ -26,6 +27,7 @@ void startFun(char* id, ENTRY* vars){
     ast->entry = entry;
 }
 
+/* for yacc parser VARDECLIST */
 ENTRY *varDecListFun(ENTRY *first, ENTRY *second) {
     ENTRY * n = first -> next;
     if(n == NULL){
@@ -41,6 +43,7 @@ ENTRY *varDecListFun(ENTRY *first, ENTRY *second) {
     return first;
 }
 
+/* for yacc parser IDENTLISTTYPE */
 ENTRY *intentListTypeFun(ENTRY *list, ENTRY *type) {
     ENTRY *idListType = list;
     ENTRY *head = idListType;
@@ -57,13 +60,15 @@ ENTRY *intentListTypeFun(ENTRY *list, ENTRY *type) {
     return head;
 }
 
+/* for yacc parser SIMPLETYPE */
 ENTRY *simpleTypeFun(_DATA_TYPE type, int array, float lower, float upper) {
     ENTRY *output = (ENTRY *)(malloc(sizeof(struct tENTRY)));
     output->typ = _VAR;
     output->dataType = type;
     if(array == 1){
+        // for the arrays it also has to check, if the bounds are defined correctly
         output->typ = _ARRAY;
-        int new_lower = (int)(lower*10000);
+        int new_lower = (int)(lower*10000); // if they are number
         if(new_lower%10000 != 0){
             printf("Error in line %d: array bound must be an int\n", yylineno);
             free(output);
@@ -77,7 +82,7 @@ ENTRY *simpleTypeFun(_DATA_TYPE type, int array, float lower, float upper) {
             exit(11);
         }
         new_upper = (int)(upper);
-        if(new_lower > new_upper){
+        if(new_lower > new_upper){  // if indexing goes up
             printf("Error in line %d: array declaration with second index lower than the first\n", yylineno);
             free(output);
             exit(11);
@@ -89,6 +94,7 @@ ENTRY *simpleTypeFun(_DATA_TYPE type, int array, float lower, float upper) {
     return output;
 }
 
+/* for yacc parser IDLIST */
 ENTRY *idListFun(char *id, ENTRY *second) {
     ENTRY *idList = (ENTRY *)(malloc(sizeof(struct tENTRY)));
     idList->id = id;
@@ -96,6 +102,7 @@ ENTRY *idListFun(char *id, ENTRY *second) {
     return idList;
 }
 
+/* for yacc parser SUBPROGLIST */
 N_PROG *subProgListFun(ENTRY *header, ENTRY *vars) {
     N_PROG* prog = (N_PROG *)(malloc(sizeof(struct tN_PROG)));
     prog->entry = header;
@@ -105,6 +112,7 @@ N_PROG *subProgListFun(ENTRY *header, ENTRY *vars) {
     return prog;
 }
 
+/* for yacc parser SUBPROGHEAD */
 ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
     ENTRY *check = funLookup(id);
     if(check == NULL){
@@ -123,6 +131,7 @@ ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
         func->id = id;
         func->ext.parList = params;
         func->next = NULL;
+        // element is assigned once more to a different address, because it needs to go to the available function list
         ENTRY *toSave = (ENTRY*) malloc(sizeof (struct tENTRY));
         toSave->dataType = type;
         toSave->typ = _CALL;
@@ -139,6 +148,7 @@ ENTRY *subHeaderFun(_DATA_TYPE type, char* id, ENTRY* params){
     }
 }
 
+/* for yacc parser PARLIST */
 ENTRY *parListFun(ENTRY *first, ENTRY *tail){
     ENTRY * n = first -> next;
     if(n == NULL){
@@ -153,6 +163,9 @@ ENTRY *parListFun(ENTRY *first, ENTRY *tail){
     return first;
 }
 
+/* for yacc parser SIMPLEEXPR
+ *
+ * This function also checks if the operands are of correct type*/
 N_EXPR *simpleExprFun(N_EXPR* left, _OPERATOR op, N_EXPR *right){
     if(left == NULL){
         printf("Error in line %d: Empty expression\n", yylineno);
@@ -160,6 +173,8 @@ N_EXPR *simpleExprFun(N_EXPR* left, _OPERATOR op, N_EXPR *right){
     }
     N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
     expr->typ = OP;
+
+    // checks and assigning the return type
     if (op == NOT_OP || op == AND_OP || op == OR_OP){
         if(left->dataType != _BOOL || right -> dataType != _BOOL){
             printf("Error in line %d: Logical operator not declared for given data type\n", yylineno);
@@ -227,6 +242,8 @@ N_EXPR *simpleExprFun(N_EXPR* left, _OPERATOR op, N_EXPR *right){
             exit(19);
         }
     }
+
+    // assignment
     expr->description.operation.expr = left;
     expr->description.operation.op = op;
     expr->description.operation.expr->next = right;
@@ -235,6 +252,7 @@ N_EXPR *simpleExprFun(N_EXPR* left, _OPERATOR op, N_EXPR *right){
     return expr;
 }
 
+/* this function creates a boolean value from string */
 N_EXPR *booleans(char* val){
     N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
     expr->typ = CONSTANT;
@@ -245,6 +263,7 @@ N_EXPR *booleans(char* val){
     return expr;
 }
 
+/* this function converts numbers to ints if possible and then to expressions*/
 N_EXPR *numConversion(float num){
     N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
     expr->typ = CONSTANT;
@@ -264,6 +283,9 @@ N_EXPR *numConversion(float num){
     return expr;
 }
 
+/* This function creates identifiers
+ * (so variables, arrays and function calls)
+ * and does necessary checks on them*/
 N_EXPR *identifiers(char* name, N_EXPR *extension, int type){
     N_EXPR * expr = malloc(sizeof(struct tN_EXPR));
     if (type == 2) // function call
@@ -310,7 +332,9 @@ N_EXPR *identifiers(char* name, N_EXPR *extension, int type){
     expr->next = NULL;
     return expr;
 }
-
+/* for yacc parser ASSIGNSTMT
+ * Also checks if the bounds of arrays are good
+ * and renames variables to 'result' if necessary */
 N_ASSIGN *assignmentFun(char* name, N_EXPR *index, N_EXPR *rhs){
     N_VAR_REF* var = malloc(sizeof(struct tN_VAR_REF));
     if(strcmp(name, inFun) == 0){
@@ -352,6 +376,7 @@ N_ASSIGN *assignmentFun(char* name, N_EXPR *index, N_EXPR *rhs){
     return assign;
 }
 
+/* for yacc parser PROCCALL */
 N_CALL *procCallFun(char* name, N_EXPR *params){
     N_CALL* call = malloc(sizeof (struct tN_CALL));
     call->id = name;
@@ -366,8 +391,11 @@ N_CALL *procCallFun(char* name, N_EXPR *params){
     return call;
 }
 
-// utilities
+/* utilities */
 
+/* functions takes the id of the variable and looks in all available scopes, if it exists.
+ * If does, returns the entry with the description
+ * else returns null */
 ENTRY* variableLookup(char* name){
     ENTRY *output = NULL;
     ENTRY *current = globalVars;
@@ -389,6 +417,7 @@ ENTRY* variableLookup(char* name){
     return output;
 }
 
+/* function takes the name of the function and checks the list of available functions if it exists */
 ENTRY *funLookup(char* name){
     ENTRY *output = NULL;
     ENTRY *current = funcs;
@@ -402,6 +431,7 @@ ENTRY *funLookup(char* name){
     return output;
 }
 
+/* checks for duplicates in given scope and in functions list */
 void findDuplicates(ENTRY *scope){
 //    printScope();
     int res = 0;
@@ -432,6 +462,7 @@ void findDuplicates(ENTRY *scope){
     }
 }
 
+/* prints lists of global variables, available functions and local variables in current state of the program */
 void printScope(){
     printf("\tSCOPE\n");
     ENTRY *current = globalVars;
@@ -451,6 +482,12 @@ void printScope(){
     }
 }
 
+/* checks if the types in assignment are correct
+ * float and int are interchangeable
+ * bool is not
+ * void can't be assigned
+ * scalar can be assigned to an array, but the other way round - not
+ * if assigning array to array, they have to have the same bounds */
 void checkType(_DATA_TYPE lhs, int array,  N_EXPR *rhs) {
     if(rhs->typ == CONSTANT) {
         if (lhs == _BOOL) {
@@ -503,6 +540,8 @@ void checkType(_DATA_TYPE lhs, int array,  N_EXPR *rhs) {
     }
 }
 
+/* checks if the array call has proper index
+ * index must be int and must fit in the bounds */
 void checkIndex(N_EXPR *index, ENTRY *def){
     if (index->typ == CONSTANT) {
         if (strcmp(index->description.constant, "true") == 0 ||
@@ -546,6 +585,9 @@ void checkIndex(N_EXPR *index, ENTRY *def){
     }
 }
 
+/* based on the list of formal parameters of function fun checks:
+ * - number of parameters
+ * - types of said*/
 void checkParameters(ENTRY* fun, N_EXPR* pars){
     ENTRY* formal = fun->ext.parList;
     int i = 0;
@@ -574,6 +616,7 @@ void checkParameters(ENTRY* fun, N_EXPR* pars){
     }
 }
 
+/* extracts list of parameters from function definition to be saved on the local variables list */
 ENTRY* extractParams(ENTRY* params) {
     ENTRY *head = NULL;
     ENTRY *current = NULL;
@@ -599,6 +642,7 @@ ENTRY* extractParams(ENTRY* params) {
     return head;
 }
 
+/* defines the main function structure on the tree */
 ENTRY *constructMain(){
     ENTRY *f = (ENTRY*) malloc(sizeof (struct tENTRY));
     f->typ = _CALL;
@@ -609,6 +653,7 @@ ENTRY *constructMain(){
     return f;
 }
 
+/* appends the new node (usually variable) to a list */
 ENTRY* append(ENTRY* node, ENTRY* goal){
     ENTRY* head = goal;
     if(head == NULL){
