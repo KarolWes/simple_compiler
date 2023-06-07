@@ -9,6 +9,7 @@ _DATA_TYPE mainType = _INT;
 char* mainDef = "int main(int argc, char *argv[])";
 int indentLevel = 0;
 _DATA_TYPE returnType = 0;
+int labelCounter = 0;
 
 /* Utility functions */
 
@@ -97,22 +98,12 @@ void printEntry(ENTRY *input) {
                 fprintf(f, "[%d];\n", input->ext.bounds.high - input->ext.bounds.low+1);
                 break;
             case _PROG:
-                if (input->dataType == _MAIN){
-                    printf("\n\t/* program: '%s' */\n\n\n", input->id);
-                    fprintf(f, "\n\t/* program: '%s' */\n\n\n", input->id);
-                }
                 returnType = input->dataType;
-                if (input->dataType == _MAIN){
-                    printf("%s\n", mainDef);
-                    fprintf(f, "%s\n", mainDef);
-                }
-                else{
-                    printf("%s ", typeToStr(input->dataType));
-                    fprintf(f, "%s ", typeToStr(input->dataType));
-                    printf("%s(", input->id);
-                    fprintf(f, "%s(", input->id);
-                    printArgs(input->ext.parList);
-                }
+                printf("\n\t/* program: '%s' */\n\n\n", input->id);
+                fprintf(f, "\n\t/* program: '%s' */\n\n\n", input->id);
+                printf("%s\n", mainDef);
+                fprintf(f, "%s\n", mainDef);
+
                 return;
             case _CALL:
                 returnType = input->dataType;
@@ -123,6 +114,8 @@ void printEntry(ENTRY *input) {
                 printArgs(input->ext.parList);
                 printf(")\n");
                 fprintf(f, ")\n");
+                // assembler
+                fprintf(f_asm, "# program: %s\n\n", input->id);
                 return;
             default:
                 printf("Unidentified type: %d\n", input->typ);
@@ -224,6 +217,8 @@ void printAssign(N_ASSIGN *input) {
 }
 
 void printIf(N_IF *input) {
+    int currentLabel = labelCounter;
+    labelCounter += 1;
     if(input == NULL){
         return;
     }
@@ -233,26 +228,40 @@ void printIf(N_IF *input) {
     printExpr(input->expr, "");
     printf(")\n");
     fprintf(f, ")\n");
+    if(input->else_part != NULL){
+        fprintf(f_asm, "fjp ELSE%d\n", currentLabel);
+    }else{
+        fprintf(f_asm, "fjp END%d\n", currentLabel);
+    }
     printStatement(input->then_part, 0);
     if(input->else_part != NULL){
+        fprintf(f_asm, "j END%d\n", currentLabel);
+        fprintf(f_asm, "lab ELSE%d\n", currentLabel);
         printIndent();
         printf("else\n");
         fprintf(f, "else\n");
         printStatement(input->else_part, 0);
     }
+    fprintf(f_asm, "lab END%d\n", currentLabel);
 }
 
 void printWhile(N_WHILE *input) {
+    int currentLabel = labelCounter;
+    labelCounter += 1;
     if(input == NULL){
         return;
     }
     printIndent();
+    fprintf(f_asm, "lab WHILE%d\n", currentLabel);
     printf("while (");
     fprintf(f, "while (");
     printExpr(input->expr, "");
     printf(")\n");
     fprintf(f, ")\n");
+    fprintf(f_asm, "fjp END%d\n", currentLabel);
     printStatement(input->stmt, 0);
+    fprintf(f_asm, "j WHILE%d\n", currentLabel);
+    fprintf(f_asm, "lab END%d\n", currentLabel);
 }
 
 /* This function deals with printing function calls. It has a special flag
@@ -325,6 +334,8 @@ void printProgramBase(N_PROG *input, int set_global) {
     while( input != NULL){
         if(input->entry->dataType == _MAIN){
             printf("Type is main. Global: %d\n", set_global);
+            // assembler
+            fprintf(f_asm, "# program: %s\n\n", input->entry->id);
             main = input;
             input = input->next;
             if(set_global == 1){
@@ -366,6 +377,7 @@ void printProgram(N_PROG *input, int set_global) {
         printf("{\n");
         fprintf(f, "{\n");
         indentLevel+=1;
+        printVariableListAsm(vars);
         if(returnType != _MAIN || set_global != 1){
             if (vars != NULL){
                 printEntry(vars);
@@ -375,7 +387,10 @@ void printProgram(N_PROG *input, int set_global) {
             printIndent();
             printf("%s %s;\n", typeToStr(returnType), "result");
             fprintf(f, "%s %s;\n", typeToStr(returnType), "result");
+            // assembler
+            fprintf(f_asm, "result:\t.word\t0\n");
         }
+        fprintf(f_asm, "\n\n.section .text\n");
         indentLevel-=1;
         printStatement(input->stmt, 1);
         if(returnType != _VOID){
@@ -397,6 +412,8 @@ void printProgram(N_PROG *input, int set_global) {
 //        free(input->entry);
 //        free(input->entry->ext.parList);
         //cleanSymTable(vars);
+        fprintf(f_asm, "stp\n");
+        fprintf(f_asm, "#______________\n");
     }
 }
 
@@ -455,6 +472,51 @@ void cleanSymTable(ENTRY *symTab) {
     }
 }
 
+/* For assembly printouts */
+void push(int size, char type) {
+    fprintf(f_asm, "addi $sp, $sp, -%d\tpush\n", size);
+    fprintf(f_asm, "sw $%c0, 0($sp)\n", type);
+}
+
+void pop(int size, char type){
+    fprintf(f_asm, "lw $%c1, 0($sp)\tpop\n", type);
+    fprintf(f_asm, "addi $sp, $sp, %d\n", size);
+}
+
+void printVariableListAsm(ENTRY *vars){
+    if(vars != NULL){
+        fprintf(f_asm, ".section .data\n");
+    }
+    while(vars != NULL){
+        printVarAsm(vars);
+        vars = vars->next;
+    }
+}
+
+void printVarAsm(ENTRY *v){
+    fprintf(f_asm, "%s:\t",v->id);
+    if(v->typ == _VAR){
+        fprintf(f_asm, ".word\t");
+        if(v->dataType == _INT || v->dataType == _BOOL){
+            fprintf(f_asm, "0\n");
+        }
+        else if(v->dataType == _REAL){
+            fprintf(f_asm, "0.0\n");
+        }
+    }else if (v->typ == _ARRAY){
+        fprintf(f_asm, ".space\t");
+        if(v->dataType == _INT || v->dataType == _BOOL){
+            fprintf(f_asm, "%d\t", (v->ext.bounds.high - v->ext.bounds.low + 1) *4);
+            fprintf(f_asm, "# array of integers\n");
+        }
+        else if(v->dataType == _REAL){
+            fprintf(f_asm, "%d\t", (v->ext.bounds.high - v->ext.bounds.low + 1) * 8);
+            fprintf(f_asm, "# array of floats\n");
+        }
+    }
+}
+
+
 /* runner function to be executed
  * should also do the memory cleanup */
 void run(int set_global) {
@@ -463,6 +525,7 @@ void run(int set_global) {
         exit(3);
     }
     f = fopen("new_code.c", "w");
+    f_asm = fopen("code.asm", "w");
     if(f == NULL){
         printf("Error opening file\n");
         exit(10);
@@ -473,5 +536,6 @@ void run(int set_global) {
     printProgramBase(ast, set_global);
     fprintf(f, "\n\n\t /* Created using parser by Karol Wesolowski */");
     fclose(f);
+    fclose(f_asm);
     //free(ast);
 }

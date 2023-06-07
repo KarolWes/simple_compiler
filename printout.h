@@ -17,9 +17,11 @@ extern N_PROG *ast;
 _DATA_TYPE mainType;
 char* mainDef;
 int indentLevel;
+int labelCounter;
 
 
 FILE *f;
+FILE *f_asm;
 
 void printIndent();
 char *typeToStr(_DATA_TYPE type);
@@ -40,9 +42,12 @@ void printProgram(N_PROG *input, int set_global);
 void printOp(N_EXPR *input);
 void printArgs(ENTRY *input);
 
-
-
 void cleanSymTable(ENTRY* symTab);
+
+void push(int size, char type);
+void pop(int size, char type);
+void printVariableListAsm(ENTRY *vars);
+void printVarAsm(ENTRY *v);
 
 void run(int set_global);
 
