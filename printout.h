@@ -13,6 +13,8 @@
 
 extern int yyparse();
 extern N_PROG *ast;
+extern ENTRY* variableLookup(char* name);
+extern ENTRY *funLookup(char* name);
 
 _DATA_TYPE mainType;
 char* mainDef;
@@ -26,6 +28,8 @@ FILE *f_asm;
 void printIndent();
 char *typeToStr(_DATA_TYPE type);
 char *operatorToStr(_OPERATOR o);
+char *operatorToAsm(_OPERATOR o);
+_DATA_TYPE getType(char* id, int fun);
 
 void printEntry(ENTRY *input);
 void printVarRef(N_VAR_REF *input);

@@ -13,7 +13,7 @@ begin
   i := 2;
   while i <= b do
   begin
-    if true then
+    if a < 10 then
       a := a+1;
     i := i+1
   end;

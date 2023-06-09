@@ -106,16 +106,13 @@ begin
 
   a := 48;
   b := 84;
-  a := gcd(a, b);
-  b := factorial(a+b);
-  b := b - sum(a*b);
 
   { count all prime numbers from 2 to b }
   a := 1;
   i := 2;
   while i <= b do
   begin
-    if is_prime(i) then
+    if i%2 == 0 then
       a := a+1;
     i := i+1
   end;
@@ -126,7 +123,5 @@ begin
     x[i] := (n-i+1)*3.14;
     i := i+1
   end;
-
-  bubble_sort(x, 1)
 
 end.
