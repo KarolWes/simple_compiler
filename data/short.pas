@@ -22,6 +22,6 @@ begin
   while i < b do
   begin
     x[i] := (n-i+1)*3.14;
-    i := i+1
+    i := x[1]+1
   end
 end.

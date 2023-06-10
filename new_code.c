@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	while (i < b)
 	{
 		x[i] = (n - i + 1) * 3.140000;
-		i = i + 1;
+		i = x[1] + 1;
 	}
 	return 0;
 }
