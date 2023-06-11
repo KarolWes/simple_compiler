@@ -100,6 +100,10 @@ char *operatorToAsm(_OPERATOR o) {
             return "mult";
         case SLASH_OP:
             return "div";
+        case DIV_OP:
+            return "div";
+        case MOD_OP:
+            return "div";
         case AND_OP:
             return "andi";
         case OR_OP:
@@ -149,7 +153,8 @@ void printEntry(ENTRY *input) {
                 fprintf(f, "\n\t/* program: '%s' */\n\n\n", input->id);
                 printf("%s\n", mainDef);
                 fprintf(f, "%s\n", mainDef);
-
+                // assembler
+                fprintf(f_asm, "# program %s:\n\n", input->id);
                 return;
             case _CALL:
                 returnType = input->dataType;
@@ -161,7 +166,7 @@ void printEntry(ENTRY *input) {
                 printf(")\n");
                 fprintf(f, ")\n");
                 // assembler
-                fprintf(f_asm, "# program: %s\n\n", input->id);
+                fprintf(f_asm, "program_%s:\n\n", input->id);
                 return;
             default:
                 printf("Unidentified type: %d\n", input->typ);
@@ -186,11 +191,13 @@ void printVarRef(N_VAR_REF *input) {
         printf("]");
         fprintf(f, "]");
         if(dt == _BOOL || dt == _INT){
-            fprintf(f_asm, "\tmult t0, t0, 4\n");
+            fprintf(f_asm, "\tli $t2, 4\n");
         }
         else{
-            fprintf(f_asm, "\tmult t0, t0, 8\n");
+            fprintf(f_asm, "\tli $t2, 8\n");
         }
+        fprintf(f_asm, "\tmult $t0, $t2\n");
+        fprintf(f_asm, "\tmflo $t0\n");
         push(4, 't');
     }
     //free(input);
@@ -236,12 +243,12 @@ void printExprInner(N_EXPR *input, char* separator) {
                     tmp  = (int) num;
                     printf("%d", tmp);
                     fprintf(f, "%d", tmp);
-                    fprintf(f_asm, "\tli t0, %d\n", tmp);
+                    fprintf(f_asm, "\tli $t0, %d\n", tmp);
                 }
                 else{
                     printf("%f", num);
                     fprintf(f, "%f", num);
-                    fprintf(f_asm, "\tli f0, %f\n", num);
+                    fprintf(f_asm, "\tli.s $f0, %f\n", num);
                 }
             }
             break;
@@ -250,22 +257,21 @@ void printExprInner(N_EXPR *input, char* separator) {
             //assembler
             _DATA_TYPE dt = getType(input->description.var_ref->id, 0);
             if(input->description.var_ref->index == NULL){
-                fprintf(f_asm, "\tlw ");
                 if (dt == _BOOL || dt == _INT) {
-                    fprintf(f_asm, "t0, ");
+                    fprintf(f_asm, "\tlw $t0, ");
                 } else {
-                    fprintf(f_asm, "f0, ");
+                    fprintf(f_asm, "\tlwc1 $f0, ");
                 }
                 fprintf(f_asm, "%s\n", input->description.var_ref->id);
             }
             else{
                 pop(4,'t');
-                fprintf(f_asm, "\tlw ");
                 if (dt == _BOOL || dt == _INT) {
-                    fprintf(f_asm, "t0, ");
+                    fprintf(f_asm, "\tlw $t0, ");
                 } else {
-                    fprintf(f_asm, "f0, ");
+                    fprintf(f_asm, "\tlwc1 $f0, ");
                 }
+                // TODO: Nie działa
                 fprintf(f_asm, "$t1(%s)\n", input->description.var_ref->id);
             }
 
@@ -298,13 +304,12 @@ void printAssign(N_ASSIGN *input) {
     if(input->var_ref->index != NULL){
         pop(4,'t');
     }
-    fprintf(f_asm, "\tsw ");
     _DATA_TYPE  dt = getType(input->var_ref->id, 0);
     if(dt == _INT || dt == _BOOL){
-        fprintf(f_asm, "t0, ");
+        fprintf(f_asm, "\tsw $t0, ");
     }
     else{
-        fprintf(f_asm, "f0, ");
+        fprintf(f_asm, "\tswc1 $f0, ");
     }
     if(input->var_ref->index == NULL) { fprintf(f_asm, "%s\n", input->var_ref->id); }
     else{
@@ -432,7 +437,6 @@ void printProgramBase(N_PROG *input, int set_global) {
         if(input->entry->dataType == _MAIN){
             printf("Type is main. Global: %d\n", set_global);
             // assembler
-            fprintf(f_asm, "# program: %s\n\n", input->entry->id);
             main = input;
             input = input->next;
             if(set_global == 1){
@@ -487,7 +491,7 @@ void printProgram(N_PROG *input, int set_global) {
             // assembler
             fprintf(f_asm, "\tresult:\t.word\t0\n");
         }
-        fprintf(f_asm, "\n\n.section .text\n");
+        fprintf(f_asm, "\n\n.text\n");
         indentLevel-=1;
         printStatement(input->stmt, 1);
         if(returnType != _VOID){
@@ -509,7 +513,7 @@ void printProgram(N_PROG *input, int set_global) {
 //        free(input->entry);
 //        free(input->entry->ext.parList);
         //cleanSymTable(vars);
-        fprintf(f_asm, "\tstp\n");
+        fprintf(f_asm, "\tdone\n\n");
         fprintf(f_asm, "#______________\n");
     }
 }
@@ -522,9 +526,9 @@ void printOp(N_EXPR  *input){
         fprintf(f, "! ");
         printExprInner(input->description.operation.expr, "");
         if(input->dataType == _BOOL || input->dataType == _INT){
-            fprintf(f_asm, "\t%s, t0\n", operatorToAsm(NOT_OP));
+            fprintf(f_asm, "\t%s, $t0\n", operatorToAsm(NOT_OP));
         }else{
-            fprintf(f_asm, "\t%s, f0\n", operatorToAsm(NOT_OP));
+            fprintf(f_asm, "\t%s, $f0\n", operatorToAsm(NOT_OP));
         }
 
 //        free(input->description.operation.expr);
@@ -539,34 +543,62 @@ void printOp(N_EXPR  *input){
                 printf(" %s ", operatorToStr(input->description.operation.op));
                 fprintf(f, " %s ", operatorToStr(input->description.operation.op));
                 if(dt == _BOOL || dt == _INT){
-                    push(4, 't');
+                    push(4,'t');
                 }else{
                     push(8, 'f');
                 }
             }
             else{
                 _OPERATOR o = input->description.operation.op;
+                char* o_asm = operatorToAsm(o);
                 if(o == EQ_OP || o == NEQ_OP || o == LEQ_OP || o == GEQ_OP || o == LT_OP || o == GT_OP ||
                     o == AND_OP || o == OR_OP){
                     if(e->dataType == _BOOL || e->dataType == _INT){
                         pop(4, 't');
-                        fprintf(f_asm, "\t%s t0, t1, t0\n", operatorToAsm(o));
+                        fprintf(f_asm, "\t%s $t0, $t1, $t0\n", o_asm);
                     }
                     else{
                         pop(8, 'f');
-                        fprintf(f_asm, "\t%s t0, f1, f0\n", operatorToAsm(o));
+                        fprintf(f_asm, "\t%s $t0, $f1, $f0\n", o_asm);
                     }
-                }else{
+                }else if(o == MULTI_OP){
                     if(e->dataType == _BOOL || e->dataType == _INT){
                         pop(4, 't');
-                        fprintf(f_asm, "\t%s t0, t1, t0\n", operatorToAsm(o));
+                        fprintf(f_asm, "\t%s $t1, $t0\n", o_asm);
+                        fprintf(f_asm, "\tmflo $t0\n");
                     }
                     else{
                         pop(8, 'f');
-                        fprintf(f_asm, "\t%s f0, f1, f0\n", operatorToAsm(o));
+                        fprintf(f_asm, "\tmul.s $f0, $f1, $f0\n");
                     }
                 }
+                else if(o == DIV_OP || o == SLASH_OP) {
+                    if(e->dataType == _BOOL || e->dataType == _INT){
+                        pop(4, 't');
+                        fprintf(f_asm, "\t%s $t1, $t0\n", o_asm);
+                        fprintf(f_asm, "\tmflo $t0\n");
+                    }
+                    else{
+                        pop(8, 'f');
+                        fprintf(f_asm, "\tdiv.s $f0, $f1, $f0\n");
+                    }
 
+                }
+                else if(o == MOD_OP) {
+                    pop(4, 't');
+                    fprintf(f_asm, "\t%s $t1, $t0\n", o_asm);
+                    fprintf(f_asm, "\tmfhi $t0\n");
+                }
+                else{
+                    if(e->dataType == _BOOL || e->dataType == _INT){
+                        pop(4, 't');
+                        fprintf(f_asm, "\t%s $t0, $t1, $t0\n", o_asm);
+                    }
+                    else{
+                        pop(8, 'f');
+                        fprintf(f_asm, "\t%s $f0, $f1, $f0\n", o_asm);
+                    }
+                }
             }
             N_EXPR *old = e;
             e = e->next;
@@ -608,17 +640,28 @@ void cleanSymTable(ENTRY *symTab) {
 /* For assembly printouts */
 void push(int size, char type) {
     fprintf(f_asm, "\taddi $sp, $sp, -%d\t# push\n", size);
-    fprintf(f_asm, "\tsw $%c0, 0($sp)\n", type);
+    if(type == 't'){
+        fprintf(f_asm, "\tsw $t0, 0($sp)\n");
+    }
+    else{
+        fprintf(f_asm, "\tswc1 $f0, 0($sp)\n");
+    }
+
 }
 
 void pop(int size, char type){
-    fprintf(f_asm, "\tlw $%c1, 0($sp)\t# pop\n", type);
+    if(type == 't'){
+        fprintf(f_asm, "\tlw $t1, 0($sp)\t# pop\n");
+    }
+    else{
+        fprintf(f_asm, "\tlwc1 $f1, 0($sp)\t# pop\n");
+    }
     fprintf(f_asm, "\taddi $sp, $sp, %d\n", size);
 }
 
 void printVariableListAsm(ENTRY *vars){
     if(vars != NULL){
-        fprintf(f_asm, ".section .data\n");
+        fprintf(f_asm, ".data\n");
     }
     while(vars != NULL){
         printVarAsm(vars);

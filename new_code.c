@@ -1,6 +1,6 @@
 	/* Global variables */
 int a;
-int b;
+int vari;
 int i;
 int n;
 float x [100];
@@ -13,17 +13,17 @@ float x [100];
 int main(int argc, char *argv[])
 {
 	a = 48;
-	b = 84;
+	vari = 84;
 	a = 1;
 	i = 2;
-	while (i <= b)
+	while (i <= vari)
 	{
 		if (a < 10)
 			a = a + 1;
 		i = i + 1;
 	}
 	i = 1;
-	while (i < b)
+	while (i < vari)
 	{
 		x[i] = (n - i + 1) * 3.140000;
 		i = x[1] + 1;
