@@ -65,7 +65,7 @@ WHILE2:
 	slt $t0, $t1, $t0
 	beq $t0, $zero, END2
 	lw $t0, i
-	li $t2, 8
+	li $t2, 8 # calculate index offset
 	mult $t0, $t2
 	mflo $t0
 	addi $sp, $sp, -4	# push
@@ -91,16 +91,20 @@ WHILE2:
 	mul.s $f0, $f1, $f0
 	lw $t1, 0($sp)	# pop
 	addi $sp, $sp, 4
-	#swc1 $f0, $t1(x)
+	la $t4, x
+	add $t3, $t4, $t1 # set new index in the array
+	swc1 $f0, 0($t3)
 	li $t0, 1
-	li $t2, 8
+	li $t2, 8 # calculate index offset
 	mult $t0, $t2
 	mflo $t0
 	addi $sp, $sp, -4	# push
 	sw $t0, 0($sp)
 	lw $t1, 0($sp)	# pop
 	addi $sp, $sp, 4
-	#lwc1 $f0, $t1(x)
+	la $t4, x
+	add $t3, $t4, $t1 # set new index in the array
+	swc1 $f0, 0($t3)
 	addi $sp, $sp, -8	# push
 	swc1 $f0, 0($sp)
 	li $t0, 1

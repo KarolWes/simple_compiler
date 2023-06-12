@@ -191,10 +191,10 @@ void printVarRef(N_VAR_REF *input) {
         printf("]");
         fprintf(f, "]");
         if(dt == _BOOL || dt == _INT){
-            fprintf(f_asm, "\tli $t2, 4\n");
+            fprintf(f_asm, "\tli $t2, 4 # calculate index offset\n");
         }
         else{
-            fprintf(f_asm, "\tli $t2, 8\n");
+            fprintf(f_asm, "\tli $t2, 8 # calculate index offset\n");
         }
         fprintf(f_asm, "\tmult $t0, $t2\n");
         fprintf(f_asm, "\tmflo $t0\n");
@@ -266,13 +266,14 @@ void printExprInner(N_EXPR *input, char* separator) {
             }
             else{
                 pop(4,'t');
-                if (dt == _BOOL || dt == _INT) {
-                    fprintf(f_asm, "\tlw $t0, ");
-                } else {
-                    fprintf(f_asm, "\tlwc1 $f0, ");
+                fprintf(f_asm, "\tla $t4, %s\n",input->description.var_ref->id);
+                fprintf(f_asm, "\tadd $t3, $t4, $t1 # set new index in the array\n");
+                if(dt == _INT || dt == _BOOL){
+                    fprintf(f_asm, "\tsw $t0, 0($t3)\n");
                 }
-                // TODO: Nie działa
-                fprintf(f_asm, "$t1(%s)\n", input->description.var_ref->id);
+                else{
+                    fprintf(f_asm, "\tswc1 $f0, 0($t3)\n");
+                }
             }
 
             break;
@@ -301,21 +302,27 @@ void printAssign(N_ASSIGN *input) {
     printf(";\n");
     fprintf(f, ";\n");
     //assembler
+    _DATA_TYPE  dt = getType(input->var_ref->id, 0);
     if(input->var_ref->index != NULL){
         pop(4,'t');
-    }
-    _DATA_TYPE  dt = getType(input->var_ref->id, 0);
-    if(dt == _INT || dt == _BOOL){
-        fprintf(f_asm, "\tsw $t0, ");
+        fprintf(f_asm, "\tla $t4, %s\n",input->var_ref->id);
+        fprintf(f_asm, "\tadd $t3, $t4, $t1 # set new index in the array\n");
+        if(dt == _INT || dt == _BOOL){
+            fprintf(f_asm, "\tsw $t0, 0($t3)\n");
+        }
+        else{
+            fprintf(f_asm, "\tswc1 $f0, 0($t3)\n");
+        }
     }
     else{
-        fprintf(f_asm, "\tswc1 $f0, ");
+        if(dt == _INT || dt == _BOOL){
+            fprintf(f_asm, "\tsw $t0, ");
+        }
+        else{
+            fprintf(f_asm, "\tswc1 $f0, ");
+        }
+        fprintf(f_asm, "%s\n", input->var_ref->id);
     }
-    if(input->var_ref->index == NULL) { fprintf(f_asm, "%s\n", input->var_ref->id); }
-    else{
-        fprintf(f_asm, "$t1(%s)\n", input->var_ref->id);
-    }
-
 }
 
 void printIf(N_IF *input) {
