@@ -9,6 +9,8 @@
 
 
 .text
+.globl main
+main:
 	li $t0, 48
 	sw $t0, a
 	li $t0, 84
@@ -114,6 +116,6 @@ WHILE2:
 	sw $t0, i
 	j WHILE2
 END2:
-	done
+
 
 #______________

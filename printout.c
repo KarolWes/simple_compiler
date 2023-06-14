@@ -486,6 +486,7 @@ void printProgram(N_PROG *input, int set_global) {
         fprintf(f, "{\n");
         indentLevel+=1;
         printVariableListAsm(vars);
+
         if(returnType != _MAIN || set_global != 1){
             if (vars != NULL){
                 printEntry(vars);
@@ -499,6 +500,10 @@ void printProgram(N_PROG *input, int set_global) {
             fprintf(f_asm, "\tresult:\t.word\t0\n");
         }
         fprintf(f_asm, "\n\n.text\n");
+        if(returnType == _MAIN){
+            fprintf(f_asm, ".globl main\n");
+            fprintf(f_asm, "main:\n");
+        }
         indentLevel-=1;
         printStatement(input->stmt, 1);
         if(returnType != _VOID){
@@ -520,7 +525,7 @@ void printProgram(N_PROG *input, int set_global) {
 //        free(input->entry);
 //        free(input->entry->ext.parList);
         //cleanSymTable(vars);
-        fprintf(f_asm, "\tdone\n\n");
+//        fprintf(f_asm, "\tdone\n\n");
         fprintf(f_asm, "#______________\n");
     }
 }
@@ -679,11 +684,12 @@ void printVariableListAsm(ENTRY *vars){
 void printVarAsm(ENTRY *v){
     fprintf(f_asm, "\t%s:\t",v->id);
     if(v->typ == _VAR){
-        fprintf(f_asm, ".word\t");
         if(v->dataType == _INT || v->dataType == _BOOL){
+            fprintf(f_asm, ".word\t");
             fprintf(f_asm, "0\n");
         }
         else if(v->dataType == _REAL){
+            fprintf(f_asm, ".float\t");
             fprintf(f_asm, "0.0\n");
         }
     }else if (v->typ == _ARRAY){
