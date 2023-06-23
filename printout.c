@@ -525,7 +525,7 @@ void printProgram(N_PROG *input, int set_global) {
 //        free(input->entry);
 //        free(input->entry->ext.parList);
         //cleanSymTable(vars);
-//        fprintf(f_asm, "\tdone\n\n");
+        fprintf(f_asm, "# done\n\n");
         fprintf(f_asm, "#______________\n");
     }
 }

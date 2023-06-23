@@ -1,0 +1,10 @@
+//
+// Created by Karol on 23.06.2023.
+//
+
+#ifndef SCANNER_L_EXAM_FUNCTIONS_H
+#define SCANNER_L_EXAM_FUNCTIONS_H
+
+
+
+#endif //SCANNER_L_EXAM_FUNCTIONS_H

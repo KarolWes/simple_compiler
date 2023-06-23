@@ -116,6 +116,6 @@ WHILE2:
 	sw $t0, i
 	j WHILE2
 END2:
-
+# done
 
 #______________
