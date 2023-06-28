@@ -9,9 +9,7 @@ int yylineno = 1;
 comment "{"[^"}"]*"}"
 whitespace  [ \t]
 digit [0-9]
-number "-"?{digit}+("."{digit}+)?
-alpha [A-Za-z_]
-alpha_digit {alpha}|{digit}
+number {digit}+
 
 %%
 
@@ -19,21 +17,32 @@ alpha_digit {alpha}|{digit}
 {whitespace}+ {}
 "\n" {yylineno += 1;}
 
-"program" {return PROG;}
+"+" return PLUS;
+"-" return MINUS;
+"*" return MULTI;
+"/" return DIV;
+"(" return OPEN;
+")" return CLOSE;
 
 {number} {
-    float val = atof(yytext);
-    yylval.number_f = val;
+    float val = atoi(yytext);
+    yylval.number = val;
     return NUM;
 }
 
-{alpha}{alpha_digit}* {
-    yylval.string = strdup(yytext);
-    return ID;
-}
 
 . {
     printf("\t<Line %d> Error: Unrecognised character %s\n", yylineno, yytext);
     return -1;
 }
 %%
+
+//int main(){
+//    int res = yylex();
+//    while (res != 0){
+//        printf("%d\n", res);
+//        res = yylex();
+//    }
+//    printf("%s", yytext);
+//    return 0;
+//}
