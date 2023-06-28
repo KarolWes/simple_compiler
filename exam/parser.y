@@ -5,21 +5,21 @@
 	void yyerror(char *s);
         int yylex();
         extern int yylineno;
+        extern int prev_prec;
 %}
 %union {
 	int number;
 	char *string;
-	struct tN_EXPR *expr;
 }
 
 %token  PLUS MINUS DIV MULTI OPEN CLOSE
 %token <number> NUM
 %start  start
-%type <expr> expr term factor
+%type <number> expr term factor
 %type <number> addOp mulOp
 
 %%
-start	: expr {printf("Value of the given expression = %d\n", $1->value);}
+start	: expr {printf("Value of the given expression = %d\n", $1);}
 	;
 
 expr		: term addOp expr{ $$ = simpleExprFun($1,$2,$3); }
@@ -28,9 +28,13 @@ expr		: term addOp expr{ $$ = simpleExprFun($1,$2,$3); }
 term		: factor mulOp term	{ $$ = simpleExprFun($1,$2,$3); }
 		| factor		{ $$ = $1; }
 		;
-factor		: NUM			{ $$ = factorFun($1); }
+factor		: NUM			{
+						$$ = $1;
+						consumed_numbers += 1;
+					}
 		| OPEN expr CLOSE {
 							$$ = $2;
+							prev_prec = 0;
 						  }
 addOp		: PLUS		{$$ = PLUS_OP;}
 		| MINUS		{$$ = MINUS_OP;}
